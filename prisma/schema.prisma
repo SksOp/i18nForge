@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//  ------------------------------------------------------------
+// USER LOGED IN VIA GITHUB
+//  ------------------------------------------------------------
+
+
+model User {
+  id              String    @id @default(uuid())
+  name            String?
+  username        String?   @unique
+  email           String   @unique
+  image           String?
+  accessToken     String?
+  githubId        String?   @unique
+  tokenExpiresAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
