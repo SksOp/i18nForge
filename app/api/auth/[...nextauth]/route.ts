@@ -2,7 +2,7 @@ import NextAuth, { Account, Profile, User } from "next-auth";
 import GithubProvider from "next-auth/providers/github";
 import { JWT } from "next-auth/jwt";
 import { Session } from "next-auth";
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from "@prisma/client";
 
 if (!process.env.GITHUB_ID || !process.env.GITHUB_SECRET) {
   throw new Error("GITHUB_ID and GITHUB_SECRET must be set");
@@ -45,7 +45,17 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, account, profile, user }: { token: JWT; account: Account | null; profile?: Profile; user?: User }): Promise<JWT> {
+    async jwt({
+      token,
+      account,
+      profile,
+      user,
+    }: {
+      token: JWT;
+      account: Account | null;
+      profile?: Profile;
+      user?: User;
+    }): Promise<JWT> {
       if (account && user) {
         return {
           ...token,
@@ -54,13 +64,19 @@ export const authOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
-          username: (profile as any)?.login || null,
+          // @ts-ignore
+          username: (profile as unknown as { login: string })?.login || null,
         };
       }
       return token;
     },
-    async session({ session, token }: { session: Session; token: JWT }): Promise<Session> {
-
+    async session({
+      session,
+      token,
+    }: {
+      session: Session;
+      token: JWT;
+    }): Promise<Session> {
       const data = {
         ...session,
         accessToken: token.accessToken,
@@ -73,10 +89,10 @@ export const authOptions = {
 
       const user = await prisma.user.findUnique({
         where: {
-          email: token.email || '',
+          email: token.email || "",
         },
       });
-
+      console.log("user", user);
       if (!user && token.email) {
         await prisma.user.create({
           data: {
@@ -85,8 +101,8 @@ export const authOptions = {
             username: token.username || null,
             image: token.image || null,
             accessToken: token.accessToken || null,
-            githubId: token.githubId || null
-          }
+            githubId: token.githubId || null,
+          },
         });
       }
       return data;
