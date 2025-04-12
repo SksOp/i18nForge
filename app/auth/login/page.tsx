@@ -2,6 +2,19 @@
 import React from "react";
 import { useSession, signIn } from "next-auth/react";
 import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Github, GitlabIcon, Mail } from "lucide-react";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
@@ -14,7 +27,7 @@ export default function LoginPage() {
       console.log("GitHub access token:", accessToken);
     }
   }, [session]);
-
+  console.log(status);
   if (status === "loading") {
     return <div>Loading...</div>;
   }
@@ -31,13 +44,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <button
-        className="px-6 py-2 bg-black text-white rounded-md hover:bg-gray-800"
-        onClick={handleSignIn}
-      >
-        Sign in with GitHub
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white text-gray-900 p-4">
+      <div className="w-full max-w-md space-y-8">
+        <div className="flex justify-center font-bold text-lg">Logo</div>
+
+        <Card className="bg-white border-gray-200 shadow-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-xl text-center">
+              Log in to i18nForge
+            </CardTitle>
+            <CardDescription className="text-gray-500 text-center">
+              Choose your preferred sign in method
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full bg-white border-gray-200 hover:bg-gray-50 text-gray-800 flex items-center justify-center gap-2 h-11"
+                onClick={handleSignIn}
+              >
+                <Github className="h-4 w-4" />
+                <span>Continue with GitHub</span>
+              </Button>
+            </div>
+          </CardContent>
+          <CardFooter className="text-xs text-center text-gray-500 flex justify-center">
+            <p>
+              By continuing, you agree to i18nForge's{" "}
+              <a href="#" className="underline hover:text-gray-700">
+                Terms of Service
+              </a>{" "}
+              and{" "}
+              <a href="#" className="underline hover:text-gray-700">
+                Privacy Policy
+              </a>
+            </p>
+          </CardFooter>
+        </Card>
+
+        <div className="text-center text-sm text-gray-500">
+          <p>
+            Don't have an account?{" "}
+            <a href="#" className="text-gray-700 hover:underline">
+              Create an account
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

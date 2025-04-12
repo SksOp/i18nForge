@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,9 +16,11 @@ import {
   Rocket,
   Zap,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 
 export default function LandingPage() {
+  const router = useRouter();
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}
@@ -37,7 +40,9 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Button size="lg">Get Started for Free</Button>
+                <Button size="lg" onClick={() => router.push("/home")}>
+                  Get Started for Free
+                </Button>
               </div>
               <p className="text-sm text-muted-foreground">
                 👉 Sync. Collaborate. Automate.

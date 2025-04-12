@@ -46,7 +46,7 @@ export default function HomePage() {
   );
 
   if (isLoading) {
-    return <div></div>;
+    return <div>Loading...</div>;
   }
 
   return (
