@@ -38,7 +38,7 @@ const URL_FOR_INSTALL = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL;
 export default function HomePage() {
   const { data, isLoading } = useSuspenseQuery(installationsQuery());
   const [selectedInstallation, setSelectedInstallation] = useState<string>(
-    data[0].id
+    data[0]?.id
   );
 
   const installation = data?.find(
@@ -151,7 +151,6 @@ export const RepoList = ({ installation }: { installation: Installation }) => {
         cell: ({ row }) => (
           <Link
             href={`/projects/new/${installation.installationId}/${row.original.full_name}`}
-            target="_blank"
           >
             <Button size="sm" variant="outline">
               Create Project

@@ -96,7 +96,8 @@ export const getOrgRepos = async (
 export const verifyRepoAccess = async (
   installationId: string,
   owner: string,
-  repo: string
+  repo: string,
+  username: string
 ) => {
   const installationAuth = await githubAppAuth({
     type: "installation",
@@ -108,14 +109,19 @@ export const verifyRepoAccess = async (
   });
 
   try {
-    await octokit.request("GET /repos/{owner}/{repo}", {
-      owner,
-      repo,
-      headers: {
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
-    return true;
+    const resp = await octokit.request(
+      "GET /repos/{owner}/{repo}/collaborators/{username}/permission",
+      {
+        owner,
+        repo,
+        username,
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      }
+    );
+
+    return resp.data.permission === "admin" || resp.data.permission === "write";
   } catch (error: any) {
     if (error.status === 404) {
       return false;
