@@ -11,30 +11,31 @@ datasource db {
 // USER LOGED IN VIA GITHUB
 //  ------------------------------------------------------------
 
-
 model User {
-  id              String         @id @default(uuid())
-  name            String?
-  username        String?        @unique
-  email           String         @unique
-  image           String?
-  accessToken     String?
-  githubId        String?        @unique
-  tokenExpiresAt  DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  installations   Installation[]
-  attributes      Json?
+  id             String    @id @default(uuid())
+  name           String?
+  username       String    @unique @db.VarChar(255)
+  email          String?   @default("")
+  image          String?
+  accessToken    String?
+  githubId       String    @unique @db.VarChar(255)
+  tokenExpiresAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  attributes     Json?
+
+  @@map("users")
 }
 
-
 model Installation {
-  id              String    @id @default(uuid())
-  userId          String
-  installationId  String    @unique
-  type            String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  user            User      @relation(fields: [userId], references: [id])
-  payload         Json
+  id             String   @id @default(uuid())
+  installationId String   @unique
+  type           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  payload        Json
+  githubId       String   @unique
+  githubName     String
+
+  @@map("installations")
 }

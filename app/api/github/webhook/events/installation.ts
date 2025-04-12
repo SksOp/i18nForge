@@ -1,20 +1,24 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { InputJsonValue } from "@prisma/client/runtime/library";
-const prisma = new PrismaClient();
 
-interface InstallationPayload {
+export interface InstallationPayload {
   action: "created" | "deleted";
   installation: {
     id: number;
-    type: "User" | "Organization";
+    target_type: "User" | "Organization";
+    account: {
+      id: number;
+      login: string;
+    };
   };
   sender: {
-    login: string; // username
+    login: string;
     id: number;
   };
 }
 
 export const installation = (payload: InstallationPayload) => {
+  console.log("action", payload.action);
   if (payload.action === "created") {
     handleActionCreated(payload);
   } else if (payload.action === "deleted") {
@@ -23,25 +27,14 @@ export const installation = (payload: InstallationPayload) => {
 };
 
 const handleActionCreated = async (payload: InstallationPayload) => {
-  const username = payload.sender.login;
-
   try {
-    const user = await prisma.user.findUnique({
-      where: {
-        username: username,
-      },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
     await prisma.installation.create({
       data: {
-        userId: user.id,
         installationId: payload.installation.id.toString(),
-        type: payload.installation.type,
+        type: payload.installation.target_type,
         payload: payload as unknown as InputJsonValue,
+        githubId: payload.installation.account.id.toString(),
+        githubName: payload.installation.account.login,
       },
     });
   } catch (error) {
@@ -53,8 +46,6 @@ const handleActionCreated = async (payload: InstallationPayload) => {
 };
 
 const handleActionDeleted = async (payload: InstallationPayload) => {
-  const prisma = new PrismaClient();
-
   try {
     await prisma.installation.delete({
       where: {

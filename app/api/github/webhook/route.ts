@@ -1,29 +1,19 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { InstallationPayload, installation } from "./events/installation";
 
 export async function POST(req: Request) {
   try {
-    console.log("Received GitHub webhook");
     const headersList = await headers();
     const githubEvent = headersList.get("x-github-event");
 
-    const payload = await req.text();
-    // const secret = process.env.GITHUB_SECRET;
-
-    // if (!secret) {
-    //   return NextResponse.json(
-    //     { error: "Webhook secret not configured" },
-    //     { status: 500 }
-    //   );
-    // }
-
+    const payload_text = await req.text();
+    const payload = JSON.parse(payload_text);
     console.log("githubEvent", githubEvent);
-    console.log("payload", payload);
-
     // Handle different webhook events
     switch (githubEvent) {
       case "installation":
-        console.log("Received installation event");
+        installation(payload as unknown as InstallationPayload);
         break;
       case "pull_request":
         // Handle pull request event
