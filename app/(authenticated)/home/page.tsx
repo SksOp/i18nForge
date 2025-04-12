@@ -43,6 +43,7 @@ import {
 import Layout from "@/layout/layout";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
+import Spinner from "@/components/spinner";
 
 const URL_FOR_INSTALL = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL;
 
@@ -58,7 +59,11 @@ export default function HomePage() {
   );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex flex-col h-screen w-full items-center justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   const filteredRepos = data.filter((repo) =>

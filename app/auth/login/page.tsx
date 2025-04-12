@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Github, GitlabIcon, Mail } from "lucide-react";
+import Spinner from "@/components/spinner";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
@@ -29,7 +30,11 @@ export default function LoginPage() {
   }, [session]);
   console.log(status);
   if (status === "loading") {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex flex-col h-screen w-full items-center justify-center">
+        <Spinner />
+      </div>
+    );
   }
 
   if (status === "authenticated") {
