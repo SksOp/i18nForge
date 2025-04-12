@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Layout from "@/layout/layout";
 import {
   CheckCircle2,
   Github,
@@ -22,7 +23,7 @@ import { ReactNode } from "react";
 export default function LandingPage() {
   const router = useRouter();
   return (
-    <div className="flex min-h-screen flex-col">
+    <Layout>
       {/* Hero Section */}
       <section className="relative bg-background py-20 text-foreground">
         <div className="container mx-auto px-4 md:px-6">
@@ -251,7 +252,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>
+    </Layout>
   );
 }
 
