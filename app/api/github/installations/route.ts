@@ -33,6 +33,7 @@ export async function GET() {
     }
 
     const orgs = await getUserOrgs(session.accessToken);
+
     const installations = await getAllOrgInstallations(orgs);
     const userInstallation = await getUserSelfInstallation(session.githubId);
 
