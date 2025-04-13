@@ -22,7 +22,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     accessToken?: string;
-    githubId?: string;
+    githubId: string;
     email?: string | null;
     name?: string | null;
     image?: string | null;
@@ -81,28 +81,7 @@ export const authOptions = {
         return false;
       }
     },
-    async jwt({
-      token,
-      account,
-      profile,
-      user,
-    }: {
-      token: JWT;
-      account: Account | null;
-      profile?: Profile;
-      user?: User;
-    }): Promise<JWT> {
-      if (account && user) {
-        return {
-          ...token,
-          accessToken: account.access_token,
-          githubId: account.providerAccountId,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          username: (profile as unknown as { login: string })?.login || null,
-        };
-      }
+    async jwt({ token }: { token: JWT }): Promise<JWT> {
       return token;
     },
     async session({
@@ -115,7 +94,7 @@ export const authOptions = {
       return {
         ...session,
         accessToken: token.accessToken,
-        githubId: session.githubId,
+        githubId: token.githubId,
         email: token.email,
         name: token.name,
         image: token.image,

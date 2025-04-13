@@ -10,6 +10,17 @@ export async function POST(req: Request) {
     const payload_text = await req.text();
     const payload = JSON.parse(payload_text);
     console.log("githubEvent", githubEvent);
+
+    // Forward event to smee.io
+    await fetch("https://smee.io/OQaUoLqPp25339X", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-github-event": githubEvent || "",
+      },
+      body: payload_text,
+    });
+
     // Handle different webhook events
     switch (githubEvent) {
       case "installation":
