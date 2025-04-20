@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   installationQuery,
   verifyRepoAccessQuery,
@@ -8,40 +8,48 @@ import {
 import { Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import { X } from "lucide-react";
+import { z } from "zod";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createProject } from "@/state/query/project";
+import { useRouter } from "next/navigation";
+const langFileSchema = z.object({
+  path: z.string().min(1, "Path is required"),
+  language: z.string().min(1, "Language is required"),
+});
 
-interface LangFile {
-  path: string;
-  language: string;
-}
+const formSchema = z.object({
+  langFiles: z.array(langFileSchema).min(1, "At least one file is required"),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
-  const [langFiles, setLangFiles] = useState<LangFile[]>([
-    { path: "", language: "" },
-    { path: "", language: "" },
-  ]);
-
-  const handleInputChange = (
-    index: number,
-    field: keyof LangFile,
-    value: string
-  ) => {
-    const newLangFiles = [...langFiles];
-    newLangFiles[index] = {
-      ...newLangFiles[index],
-      [field]: value,
-    };
-    setLangFiles(newLangFiles);
-  };
-
-  const addNewFile = () => {
-    setLangFiles([...langFiles, { path: "", language: "" }]);
-  };
-
-  const removeFile = (index: number) => {
-    const newLangFiles = langFiles.filter((_, i) => i !== index);
-    setLangFiles(newLangFiles);
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      langFiles: [
+        { path: "", language: "" },
+        { path: "", language: "" },
+      ],
+    },
+  });
+  const createProjectMutation = useMutation({ mutationFn: createProject });
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "langFiles",
+  });
+  const router = useRouter();
+  const onSubmit = async (data: FormValues) => {
+    const project = await createProjectMutation.mutateAsync({
+      name: `${owner}/${repo}`,
+      owner: owner,
+      ownerType: "user",
+      paths: data.langFiles,
+    });
+    console.log(project);
+    router.push(`/projects/${project.id}`);
   };
 
   return (
@@ -50,37 +58,57 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
         Create Project for {owner}/{repo}
       </h1>
 
-      <div className="space-y-4">
-        {langFiles.map((file, index) => (
-          <div key={index} className="flex gap-4">
-            <Input
-              placeholder="Path to language file"
-              value={file.path}
-              onChange={(e) => handleInputChange(index, "path", e.target.value)}
-            />
-            <Input
-              placeholder="Language name"
-              value={file.language}
-              onChange={(e) =>
-                handleInputChange(index, "language", e.target.value)
-              }
-            />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Path to language file"
+                {...form.register(`langFiles.${index}.path`)}
+              />
+              {form.formState.errors.langFiles?.[index]?.path && (
+                <p className="text-sm text-red-500 mt-1">
+                  {form.formState.errors.langFiles[index]?.path?.message}
+                </p>
+              )}
+            </div>
+            <div className="flex-1">
+              <Input
+                placeholder="Language name"
+                {...form.register(`langFiles.${index}.language`)}
+              />
+              {form.formState.errors.langFiles?.[index]?.language && (
+                <p className="text-sm text-red-500 mt-1">
+                  {form.formState.errors.langFiles[index]?.language?.message}
+                </p>
+              )}
+            </div>
             <Button
+              type="button"
               variant="ghost"
               size="icon"
-              onClick={() => removeFile(index)}
+              onClick={() => remove(index)}
               className="shrink-0"
-              disabled={langFiles.length <= 1}
+              disabled={fields.length <= 1}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         ))}
 
-        <Button variant="outline" className="w-full" onClick={addNewFile}>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => append({ path: "", language: "" })}
+        >
           Add Another File
         </Button>
-      </div>
+
+        <Button type="submit" className="w-full">
+          Create Project
+        </Button>
+      </form>
     </div>
   );
 }

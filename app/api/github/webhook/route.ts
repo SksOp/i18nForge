@@ -12,7 +12,15 @@ export async function POST(req: Request) {
     console.log("githubEvent", githubEvent);
 
     // Forward event to smee.io
-    await fetch("https://smee.io/OQaUoLqPp25339X", {
+    await fetch("https://smee.io/oOlatArlxuvtrrA", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-github-event": githubEvent || "",
+      },
+      body: payload_text,
+    });
+    await fetch("https://smee.io/wGsDUkeON2boSSU", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

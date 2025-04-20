@@ -81,7 +81,29 @@ export const authOptions = {
         return false;
       }
     },
-    async jwt({ token }: { token: JWT }): Promise<JWT> {
+    async jwt({
+      token,
+      account,
+      profile,
+      user,
+    }: {
+      token: JWT;
+      account: Account | null;
+      profile?: Profile;
+      user?: User;
+    }): Promise<JWT> {
+      if (account && user) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          githubId: account.providerAccountId,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          username: (profile as unknown as { login: string })?.login || null,
+        };
+      }
+
       return token;
     },
     async session({

@@ -27,6 +27,7 @@ export const mapInstallation = (installation: DBInstallation): Installation => {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    console.log(session);
 
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
