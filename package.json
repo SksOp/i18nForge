@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "generate": "npx prisma generate",
-    "migrate": "npx dotenv-cli -e .env.local -- npx prisma migrate dev"
+    "migrate": "npx dotenv-cli -e .env.local -- npx prisma migrate dev",
+    "smee": "smee -P /api/github/webhook -u https://smee.io/oOlatArlxuvtrrA -p 3000"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -52,6 +53,8 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.5.2",
+    "graphql": "^16.10.0",
+    "graphql-request": "^7.1.2",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.487.0",
     "motion": "^12.6.5",
