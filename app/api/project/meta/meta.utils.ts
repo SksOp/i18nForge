@@ -1,0 +1,260 @@
+import { gql, request } from 'graphql-request';
+
+export class MetaUtils {
+    private static readonly GITHUB_API_URL = 'https://api.github.com/graphql';
+
+    private static async _queryRunner(token: string, query: string): Promise<any> {
+        try {
+            if (!token || !this.GITHUB_API_URL || !query) {
+                throw new Error('Missing required parameters in _queryRunner');
+            }
+            const headers = {
+                Authorization: `Bearer ${token}`
+            };
+            const data = await request(this.GITHUB_API_URL, query, {}, headers);
+            console.log('data after request: ', data);
+            return data;
+        } catch (error) {
+            console.error('Error executing GraphQL query:', error);
+            return null;
+        }
+    }
+
+    private static extractPathFromUrl(url: string): string {
+        if (url.includes('github.com')) {
+            const urlParts = url.split('/');
+            const blobIndex = urlParts.indexOf('blob');
+            if (blobIndex !== -1 && blobIndex + 2 < urlParts.length) {
+                return urlParts.slice(blobIndex + 2).join('/');
+            }
+        }
+        return url;
+    }
+
+    private static queryBuilder(paths: string[]): string {
+        console.log(paths);
+        const processedPaths = paths.map(path => {
+            if (path.includes('github.com')) {
+                const urlParts = path.split('/');
+                const blobIndex = urlParts.indexOf('blob');
+
+                if (blobIndex !== -1 && blobIndex + 1 < urlParts.length) {
+                    const branch = urlParts[blobIndex + 1];
+                    const actualPath = urlParts.slice(blobIndex + 2).join('/');
+                    return { branch, path: actualPath };
+                }
+            }
+            else if (path.includes('/blob/')) {
+                const parts = path.split('/blob/');
+                if (parts.length === 2) {
+                    const branchAndPath = parts[1].split('/', 1);
+                    const branch = branchAndPath[0];
+                    const actualPath = parts[1].substring(branch.length + 1);
+                    return { branch, path: actualPath };
+                }
+            }
+            else if (path.startsWith('blob/')) {
+                const parts = path.split('/');
+                if (parts.length >= 3) {
+                    const branch = parts[1];
+                    const actualPath = parts.slice(2).join('/');
+                    return { branch, path: actualPath };
+                }
+            }
+
+            return { branch: 'main', path };
+        });
+
+        return processedPaths.map((item, index) => `
+          file${index}: object(expression: "${item.branch}:${item.path}") {
+            ... on Blob {
+              text
+            }
+          }
+        `).join('\n');
+    }
+
+    static async getFileContent(paths: string[], token: string, name: string): Promise<string[] | null> {
+        const repo = name.split("/")[1];
+        const owner = name.split("/")[0];
+
+        const query = gql`
+            query {
+                repository(owner: "${owner}", name: "${repo}") {
+                    ${this.queryBuilder(paths)}
+                }
+            }`;
+
+        console.log('Executing GraphQL query:', query);
+
+        try {
+            const data = await this._queryRunner(token, query);
+            if (!data) return null;
+            const repository = (data as any).repository;
+            if (!repository) return null;
+
+            const contents: string[] = [];
+            for (let i = 0; i < paths.length; i++) {
+                const fileKey = `file${i}`;
+                const fileData = repository[fileKey];
+                contents.push(fileData?.text ?? '');
+            }
+            return contents;
+        } catch (error) {
+            console.error('Error fetching file contents:', error);
+            return null;
+        }
+    }
+
+    private static async getOID(token: string, owner: string, repo: string, branch: string) {
+        try {
+            const query = gql`
+                query {
+                    repository(owner: "${owner}", name: "${repo}") {
+                        ref(qualifiedName: "refs/heads/${branch}") {
+                            target {
+                                ... on Commit {
+                                    oid
+                                }
+                            }
+                        }
+                    }
+                }`;
+            const data = await MetaUtils._queryRunner(token, query);
+            if (!data) return null;
+            const repository = (data as any).repository;
+            if (!repository) return null;
+            return repository.ref.target.oid;
+        } catch (error) {
+            console.error('Error fetching OID:', error);
+            return null;
+        }
+    }
+
+    public static async createBranch(token: string, owner: string, repo: string, branch: string) {
+        try {
+            // First get the main branch's OID
+            const mainOID = await this.getOID(token, owner, repo, 'main');
+            if (!mainOID) {
+                throw new Error('Failed to get main branch OID');
+            }
+
+            // Get repository ID first
+            const repoQuery = gql`
+                query {
+                    repository(owner: "${owner}", name: "${repo}") {
+                        id
+                    }
+                }`;
+
+            const repoData = await this._queryRunner(token, repoQuery);
+            if (!repoData?.repository?.id) {
+                throw new Error('Failed to get repository ID');
+            }
+
+            const query = gql`
+                mutation {
+                    createRef(input: {
+                        repositoryId: "${repoData.repository.id}",
+                        name: "refs/heads/${branch}",
+                        oid: "${mainOID}"
+                    }) {
+                        ref {
+                            name
+                            id
+                        }
+                    }
+                }`;
+
+            const data = await this._queryRunner(token, query);
+            if (!data) return null;
+            return data.createRef.ref;
+        } catch (error) {
+            console.error('Error creating branch:', error);
+            return null;
+        }
+    }
+
+    public static async commitContent(token: string, owner: string, repo: string, branch: string, path: string, content: string, message: string) {
+        try {
+            const oid = await this.getOID(token, owner, repo, branch);
+            if (!oid) return null;
+
+            // Extract the actual file path from the URL if it's a GitHub URL
+            const actualPath = this.extractPathFromUrl(path);
+            const encodedContent = Buffer.from(content).toString('base64');
+
+            const query = gql`
+                mutation {
+                    createCommitOnBranch(input: {
+                        branch: {
+                            repositoryNameWithOwner: "${owner}/${repo}",
+                            branchName: "${branch}"
+                        },
+                        message: {
+                            headline: "${message}"
+                        },
+                        fileChanges: {
+                            additions: [
+                                {
+                                    path: "${actualPath}",
+                                    contents: "${encodedContent}"
+                                }
+                            ]
+                        },
+                        expectedHeadOid: "${oid}"
+                    }) {
+                        commit {
+                            url
+                            oid
+                        }
+                    }
+                }`;
+            const data = await MetaUtils._queryRunner(token, query);
+            if (!data) return null;
+            return data;
+        } catch (error) {
+            console.error('Error committing file contents:', error);
+            return null;
+        }
+    }
+
+    public static async createPullRequest(token: string, owner: string, repo: string, branch: string, title: string, body: string) {
+        try {
+            // Get repository ID first
+            const repoQuery = gql`
+                query {
+                    repository(owner: "${owner}", name: "${repo}") {
+                        id
+                    }
+                }`;
+
+            const repoData = await this._queryRunner(token, repoQuery);
+            if (!repoData?.repository?.id) {
+                throw new Error('Failed to get repository ID');
+            }
+
+            const query = gql`
+                mutation {
+                    createPullRequest(input: {
+                        repositoryId: "${repoData.repository.id}",
+                        headRefName: "${branch}",
+                        baseRefName: "main",
+                        title: "${title}",
+                        body: "${body}"
+                    }) {
+                        pullRequest {
+                            url
+                            number
+                        }
+                    }
+                }`;
+            const data = await MetaUtils._queryRunner(token, query);
+            if (!data) return null;
+            return data;
+        } catch (error) {
+            console.error('Error creating pull request:', error);
+            return null;
+        }
+    }
+}
