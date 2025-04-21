@@ -88,7 +88,13 @@ export default function HomePage() {
               </h2>
               <Select
                 value={selectedInstallation}
-                onValueChange={setSelectedInstallation}
+                onValueChange={(v) => {
+                  if (v === "install") {
+                    window.open(URL_FOR_INSTALL ?? "#", "_blank");
+                  } else {
+                    setSelectedInstallation(v);
+                  }
+                }}
               >
                 <SelectTrigger className="w-full md:w-[280px]">
                   <SelectValue placeholder="Select a Git provider" />
@@ -108,6 +114,10 @@ export default function HomePage() {
                       </SelectItem>
                     ))}
                   </SelectGroup>
+                  <SelectItem value="install">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Install GitHub App
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
