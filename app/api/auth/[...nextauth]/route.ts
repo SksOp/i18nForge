@@ -128,3 +128,12 @@ export const authOptions = {
 // @ts-ignore
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+
+export const getUser = async (githubId: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      githubId,
+    },
+  });
+  return user;
+};

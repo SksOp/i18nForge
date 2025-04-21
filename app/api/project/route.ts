@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { getUser } from "../auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 
 export async function POST(request: Request) {
@@ -73,9 +74,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const user = await getUser(session.githubId);
     const projects = await prisma.project.findMany({
       where: {
-        userId: session.githubId,
+        userId: user?.id,
       },
     });
 

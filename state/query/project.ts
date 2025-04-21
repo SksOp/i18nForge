@@ -1,5 +1,16 @@
+import { JsonValue } from "@prisma/client/runtime/library";
 import { queryOptions } from "@tanstack/react-query";
 
+interface Project {
+  id: string;
+  name: string;
+  owner: string;
+  createdAt: Date;
+  updatedAt: Date;
+  ownerType: string;
+  paths: Array<{ path: string; language: string }>;
+  userId: string;
+}
 interface CreateProjectPayload {
   name: string;
   owner: string;
@@ -54,7 +65,7 @@ export const projectsQuery = () => {
           "Content-Type": "application/json",
         },
       });
-      return response.json();
+      return response.json() as Promise<Project[]>;
     },
   });
 };
@@ -69,24 +80,28 @@ export const projectQuery = (projectId: string) => {
           "Content-Type": "application/json",
         },
       });
-      return response.json();
+      return response.json() as Promise<Project>;
     },
   });
 };
 
+export const getFileContent = (projectId: string) => {
+  return queryOptions({
+    queryKey: ["fileContent", projectId],
+    queryFn: async () => {
+      const response = await fetch(`/api/project/meta?id=${projectId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-export const getFileContent = async (projectId: string) => {
-  const res2 = await fetch(`/api/project/meta?id=${projectId}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to get file content");
+      }
+
+      return response.json() as Promise<{ fileContent: string[] }>;
     },
   });
-
-  if (!res2.ok) {
-    const error = await res2.json();
-    throw new Error(error.error || "Failed to get file content");
-  }
-
-  return res2.json();
 };

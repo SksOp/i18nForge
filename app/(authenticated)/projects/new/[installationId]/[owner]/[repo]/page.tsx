@@ -13,12 +13,15 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createProject } from "@/state/query/project";
 import { useRouter } from "next/navigation";
-import Layout from "@/layout/layout"; 
+import Layout from "@/layout/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 const langFileSchema = z.object({
-  path: z.string().min(1, "Path is required"),
+  path: z
+    .string()
+    .min(1, "Path is required")
+    .regex(/^\//, "Path must start with /"),
   language: z.string().min(1, "Language is required"),
 });
 
@@ -51,7 +54,6 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
       ownerType: "user",
       paths: data.langFiles,
     });
-    console.log(project);
     router.push(`/projects/${project.id}`);
   };
 
@@ -59,16 +61,24 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
     <Card className="shadow-sm">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-6">
-          Create Project for <span className="text-primary">{owner}/{repo}</span>
+          Create Project for{" "}
+          <span className="text-primary">
+            {owner}/{repo}
+          </span>
         </h1>
         <Separator className="mb-6" />
+
+        <p className="text-sm text-muted-foreground mb-4">
+          Note: All paths should start with / representing the root of your
+          repository (e.g., /locales/en.json)
+        </p>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {fields.map((field, index) => (
             <div key={field.id} className="flex gap-4 items-start">
               <div className="flex-1 space-y-2">
                 <Input
-                  placeholder="Path to language file (e.g., locales/en.json)"
+                  placeholder="/path/to/file.json"
                   {...form.register(`langFiles.${index}.path`)}
                 />
                 {form.formState.errors.langFiles?.[index]?.path && (
@@ -77,8 +87,9 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
                   </p>
                 )}
               </div>
-              <div className="flex-1 space-y-2">
+              <div className="space-y-2">
                 <Input
+                  className="max-w-xs"
                   placeholder="Language (e.g., English)"
                   {...form.register(`langFiles.${index}.language`)}
                 />
@@ -110,7 +121,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
             Add Another File
           </Button>
 
-        <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full">
             Create Project
           </Button>
         </form>
@@ -151,7 +162,9 @@ export default function NewProjectPage({
       <Layout>
         <Card className="shadow-sm">
           <CardContent className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Repository Access Required</h1>
+            <h1 className="text-2xl font-bold mb-4">
+              Repository Access Required
+            </h1>
             <p className="text-muted-foreground mb-6">
               Additional permissions are needed to access this repository.
             </p>
