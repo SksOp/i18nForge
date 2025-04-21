@@ -73,3 +73,20 @@ export const projectQuery = (projectId: string) => {
     },
   });
 };
+
+
+export const getFileContent = async (projectId: string) => {
+  const res2 = await fetch(`/api/project/meta?id=${projectId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res2.ok) {
+    const error = await res2.json();
+    throw new Error(error.error || "Failed to get file content");
+  }
+
+  return res2.json();
+};
