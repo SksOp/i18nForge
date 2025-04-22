@@ -6,9 +6,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { id } = await params;
     const project = await prisma.project.findUnique({
       where: {
-        id: params.id,
+        id,
       },
     });
 
@@ -30,12 +31,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { paths } = body;
 
     const project = await prisma.project.update({
       where: {
-        id: params.id,
+        id,
       },
       data: {
         paths: paths,
@@ -52,13 +54,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const { id } = await params;
     await prisma.project.delete({
       where: {
-        id: params.id,
+        id,
       },
     });
 

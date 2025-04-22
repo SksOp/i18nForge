@@ -28,9 +28,11 @@ export default function ProjectPage() {
   }
 
   const dataForTable = {};
-  project?.paths.forEach((path, index) => {
-    dataForTable[path.language] = JSON.parse(fileContent?.fileContent[index]);
-  });
+  if (fileContent?.fileContent) {
+    project?.paths.forEach((path, index) => {
+      dataForTable[path.language] = JSON.parse(fileContent?.fileContent[index]);
+    });
+  }
   console.log("dataForTable", dataForTable);
 
   return (

@@ -13,16 +13,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, owner, ownerType, paths } = body;
+    const { name, owner, ownerType, paths, repoName, branch } = body;
 
-    if (!name || !owner || !ownerType || !paths) {
+    if (!name || !owner || !ownerType || !paths || !repoName || !branch) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Check if project with same name already exists for this user
     const existingProject = await prisma.project.findFirst({
       where: {
         name,
@@ -54,6 +53,8 @@ export async function POST(request: Request) {
         ownerType,
         paths,
         userId: user?.id,
+        repoName,
+        defaultBranch: branch,
       },
     });
 

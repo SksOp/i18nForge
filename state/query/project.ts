@@ -8,6 +8,8 @@ interface Project {
   createdAt: Date;
   updatedAt: Date;
   ownerType: string;
+  branch: string;
+  repoName: string;
   paths: Array<{ path: string; language: string }>;
   userId: string;
 }
@@ -16,6 +18,8 @@ interface CreateProjectPayload {
   owner: string;
   ownerType: string;
   paths: Record<string, string>[];
+  branch: string;
+  repoName: string;
 }
 
 interface UpdateProjectPayload {
@@ -89,7 +93,7 @@ export const getFileContent = (projectId: string) => {
   return queryOptions({
     queryKey: ["fileContent", projectId],
     queryFn: async () => {
-      const response = await fetch(`/api/project/meta?id=${projectId}`, {
+      const response = await fetch(`/api/project/meta/file?id=${projectId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -102,6 +106,22 @@ export const getFileContent = (projectId: string) => {
       }
 
       return response.json() as Promise<{ fileContent: string[] }>;
+    },
+  });
+};
+
+
+export const branchQuery = (userName: string, repoName: string) => {
+  return queryOptions({
+    queryKey: ["branch", repoName, userName],
+    queryFn: async () => {
+      const response = await fetch(`/api/project/meta/branch?repo=${repoName}&userName=${userName}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return response.json() as Promise<{ branches: string[] }>;
     },
   });
 };

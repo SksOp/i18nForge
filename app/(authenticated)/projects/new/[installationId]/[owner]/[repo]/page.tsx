@@ -5,17 +5,19 @@ import {
   installationQuery,
   verifyRepoAccessQuery,
 } from "@/state/query/installation";
-import { Loader, X } from "lucide-react";
+import { Loader, X, FolderIcon, FileIcon, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { z } from "zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createProject } from "@/state/query/project";
 import { useRouter } from "next/navigation";
 import Layout from "@/layout/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 const langFileSchema = z.object({
   path: z
@@ -31,13 +33,223 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+type FileEntry = {
+  name: string;
+  type: string;
+  mode: string;
+};
+
+function FilePathInput({
+  value,
+  onChange,
+  owner,
+  repo,
+  branch,
+  error,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  owner: string;
+  repo: string;
+  branch: string;
+  error?: string;
+}) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentPath, setCurrentPath] = useState("");
+  const [initialLoad, setInitialLoad] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  const fetchFileTree = async (path: string) => {
+    try {
+      const response = await fetch(
+        `/api/project/meta/tree`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            repo,
+            userName: owner,
+            branch,
+            path
+          })
+        }
+      );
+      const data = await response.json();
+      console.log(`Fetched tree for path: "${path}"`, data);
+      return data;
+    } catch (error) {
+      console.error("Error fetching file tree:", error);
+      return [];
+    }
+  };
+
+  const { data: fileTree, refetch } = useQuery({
+    queryKey: ["fileTree", repo, owner, branch, currentPath],
+    queryFn: () => fetchFileTree(currentPath),
+    enabled: showSuggestions || initialLoad
+  });
+
+  // Initial load of root directory
+  useEffect(() => {
+    if (initialLoad && branch) {
+      fetchFileTree("").then(() => {
+        setInitialLoad(false);
+      });
+    }
+  }, [branch, initialLoad]);
+
+  useEffect(() => {
+    // Handle clicks outside the suggestions dropdown
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        inputRef.current !== event.target
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+
+    // If first character is "/" and we haven't shown suggestions yet
+    if (newValue === "/" && initialLoad) {
+      setInitialLoad(false);
+      setCurrentPath("");
+      setShowSuggestions(true);
+      return;
+    }
+
+    // If user types or adds a slash, update current path and show suggestions
+    if (newValue.endsWith("/") && newValue !== value) {
+      const newPath = newValue === "/" ? "" : newValue.slice(0, -1);
+      setCurrentPath(newPath);
+      setShowSuggestions(true);
+      refetch();
+    } else if (newValue.length < value.length) {
+      // Handle backspace - adjust path as needed
+      const lastSlashIndex = newValue.lastIndexOf("/");
+      if (lastSlashIndex >= 0) {
+        const parentPath = lastSlashIndex === 0 ? "" : newValue.substring(0, lastSlashIndex);
+        setCurrentPath(parentPath);
+        setShowSuggestions(true);
+        refetch();
+      }
+    } else if (!newValue.endsWith("/")) {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (entry: FileEntry) => {
+    const isDirectory = entry.type === "tree";
+    const newPath = currentPath
+      ? `${currentPath}/${entry.name}`
+      : `/${entry.name}`;
+
+    if (isDirectory) {
+      setCurrentPath(newPath);
+      onChange(`${newPath}/`);
+      refetch();
+    } else {
+      onChange(newPath);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleFocus = () => {
+    if (value === "/" || value.endsWith("/")) {
+      const path = value === "/" ? "" : value.slice(0, -1);
+      setCurrentPath(path);
+      setShowSuggestions(true);
+      refetch();
+    }
+  };
+
+  return (
+    <div className="relative w-full">
+      <Input
+        ref={inputRef}
+        placeholder="/path/to/file.json"
+        value={value}
+        onChange={handleInputChange}
+        onFocus={handleFocus}
+        className={cn(error && "border-red-500 focus-visible:ring-red-500")}
+      />
+      {error && (
+        <p className="text-sm text-red-500 mt-1">{error}</p>
+      )}
+
+      {showSuggestions && fileTree && (
+        <div
+          ref={suggestionsRef}
+          className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700"
+        >
+          {Array.isArray(fileTree) && fileTree.length > 0 ? (
+            <ul className="py-1">
+              {currentPath !== "" && (
+                <li
+                  className="px-3 py-2 flex items-center text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
+                  onClick={() => {
+                    const lastSlashIndex = currentPath.lastIndexOf("/");
+                    const parentPath = lastSlashIndex > 0
+                      ? currentPath.substring(0, lastSlashIndex)
+                      : "";
+                    setCurrentPath(parentPath);
+                    onChange(parentPath ? `${parentPath}/` : "/");
+                    refetch();
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+                  <span>Go up</span>
+                </li>
+              )}
+              {fileTree.map((entry: FileEntry, index: number) => (
+                <li
+                  key={index}
+                  className="px-3 py-2 flex items-center text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => handleSuggestionClick(entry)}
+                >
+                  {entry.type === "tree" ? (
+                    <FolderIcon className="h-4 w-4 mr-2 text-blue-500" />
+                  ) : (
+                    <FileIcon className="h-4 w-4 mr-2 text-gray-500" />
+                  )}
+                  <span>{entry.name}</span>
+                  {entry.type === "tree" && (
+                    <ChevronRight className="h-4 w-4 ml-auto" />
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="px-3 py-2 text-sm text-gray-500">
+              No files found or loading...
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       langFiles: [
-        { path: "", language: "" },
-        { path: "", language: "" },
+        { path: "/", language: "" },
+        { path: "/", language: "" },
       ],
     },
   });
@@ -47,12 +259,34 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
     name: "langFiles",
   });
   const router = useRouter();
+
+  // Get branch from URL
+  const [branch, setBranch] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      setBranch(searchParams.get("branch"));
+    }
+  }, []);
+
+  if (!branch) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader className="animate-spin mr-2" />
+        <span>Loading branch information...</span>
+      </div>
+    );
+  }
+
   const onSubmit = async (data: FormValues) => {
     const project = await createProjectMutation.mutateAsync({
       name: `${owner}/${repo}`,
       owner: owner,
       ownerType: "user",
       paths: data.langFiles,
+      branch: branch,
+      repoName: repo,
     });
     router.push(`/projects/${project.id}`);
   };
@@ -65,27 +299,35 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
           <span className="text-primary">
             {owner}/{repo}
           </span>
+          <span className="ml-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+            {branch}
+          </span>
         </h1>
         <Separator className="mb-6" />
 
         <p className="text-sm text-muted-foreground mb-4">
           Note: All paths should start with / representing the root of your
-          repository (e.g., /locales/en.json)
+          repository. Click in the field or type / to browse files.
         </p>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {fields.map((field, index) => (
             <div key={field.id} className="flex gap-4 items-start">
               <div className="flex-1 space-y-2">
-                <Input
-                  placeholder="/path/to/file.json"
-                  {...form.register(`langFiles.${index}.path`)}
+                <Controller
+                  control={form.control}
+                  name={`langFiles.${index}.path`}
+                  render={({ field, fieldState }) => (
+                    <FilePathInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      owner={owner}
+                      repo={repo}
+                      branch={branch}
+                      error={fieldState.error?.message}
+                    />
+                  )}
                 />
-                {form.formState.errors.langFiles?.[index]?.path && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.langFiles[index]?.path?.message}
-                  </p>
-                )}
               </div>
               <div className="space-y-2">
                 <Input
@@ -116,7 +358,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
             type="button"
             variant="outline"
             className="w-full mt-4"
-            onClick={() => append({ path: "", language: "" })}
+            onClick={() => append({ path: "/", language: "" })}
           >
             Add Another File
           </Button>
@@ -156,8 +398,8 @@ export default function NewProjectPage({
   if (!installation) {
     return <div>Installation not found</div>;
   }
-
-  if (!repoAccess?.hasAccess) {
+  const _repoAccess = repoAccess as any;
+  if (!_repoAccess?.hasAccess) {
     return (
       <Layout>
         <Card className="shadow-sm">
