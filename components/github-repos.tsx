@@ -6,7 +6,7 @@ import { Star, GitFork, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface Repository {
+export interface Repository {
     id: number;
     name: string;
     description: string | null;
