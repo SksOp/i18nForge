@@ -52,6 +52,9 @@ model Project {
   ownerType             String
   paths                 Json
   userId                String
+  repoName              String                  @default("")
+  defaultBranch         String                  @default("")
+
   user                  User                    @relation(fields: [userId], references: [id])
   SharedProjectRelation SharedProjectRelation[]
 
