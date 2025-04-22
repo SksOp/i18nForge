@@ -44,10 +44,19 @@ import Layout from "@/layout/layout";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import Spinner from "@/components/spinner";
+import { branchQuery } from "@/state/query/project";
+import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogContent } from "@/components/ui/dialog";
+import { DialogTrigger } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
+import { Repository } from "@/components/github-repos";
+import BranchList from "@/components/branchList";
 
 const URL_FOR_INSTALL = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL;
 
 export default function HomePage() {
+  const router = useRouter();
   const { data, isLoading } = useSuspenseQuery(installationsQuery());
   const [selectedInstallation, setSelectedInstallation] = useState<string>(
     data[0]?.id
@@ -224,6 +233,7 @@ export default function HomePage() {
 }
 
 export const RepoList = ({ installation }: { installation: Installation }) => {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
@@ -233,13 +243,13 @@ export const RepoList = ({ installation }: { installation: Installation }) => {
         per_page: 10,
         search: debouncedSearch,
       }),
-      getNextPageParam: (lastPage, pages) => {
+      getNextPageParam: (lastPage: Repository[], pages: Repository[][]) => {
         return lastPage.length === 10 ? pages.length + 1 : null;
       },
     });
 
   const flatData = useMemo(
-    () => data?.pages.flatMap((page) => page) ?? [],
+    () => data?.pages?.flatMap((page: Repository[]) => page) ?? [],
     [data?.pages]
   );
   console.log("table", installation, flatData);
@@ -255,11 +265,28 @@ export const RepoList = ({ installation }: { installation: Installation }) => {
               <span className="font-medium">{repo.name}</span>
               {repo.private && <Lock className="w-4 h-4" />}
             </div>
-            <Link
-              href={`/projects/new/${installation.installationId}/${repo.full_name}`}
-            >
-              <Button size="sm">Import</Button>
-            </Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm">Import</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Select Branch</DialogTitle>
+                  <DialogDescription>
+                    Choose a branch to import from {repo.name}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-2">
+                  <BranchList
+                    repoName={repo.name}
+                    userName={installation.name}
+                    onSelect={(branch) => {
+                      router.push(`/projects/new/${installation.installationId}/${repo.full_name}?branch=${branch}`);
+                    }}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         ))
       ) : (
