@@ -23,7 +23,10 @@ const langFileSchema = z.object({
   path: z
     .string()
     .min(1, "Path is required")
-    .regex(/^\//, "Path must start with /"),
+    .regex(/^\//, "Path must start with /")
+    .refine((path) => path.endsWith('.json'), {
+      message: "File must be a JSON file"
+    }),
   language: z.string().min(1, "Language is required"),
 });
 
@@ -214,23 +217,34 @@ function FilePathInput({
                   <span>Go up</span>
                 </li>
               )}
-              {fileTree.map((entry: FileEntry, index: number) => (
-                <li
-                  key={index}
-                  className="px-3 py-2 flex items-center text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => handleSuggestionClick(entry)}
-                >
-                  {entry.type === "tree" ? (
-                    <FolderIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  ) : (
-                    <FileIcon className="h-4 w-4 mr-2 text-gray-500" />
-                  )}
-                  <span>{entry.name}</span>
-                  {entry.type === "tree" && (
-                    <ChevronRight className="h-4 w-4 ml-auto" />
-                  )}
-                </li>
-              ))}
+              {fileTree.map((entry: FileEntry, index: number) => {
+                const isJsonFile = entry.type === "blob" && entry.name.endsWith('.json');
+                const isDisabled = entry.type === "blob" && !isJsonFile;
+
+                return (
+                  <li
+                    key={index}
+                    className={cn(
+                      "px-3 py-2 flex items-center text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700",
+                      isDisabled && "opacity-50 cursor-not-allowed"
+                    )}
+                    onClick={() => !isDisabled && handleSuggestionClick(entry)}
+                  >
+                    {entry.type === "tree" ? (
+                      <FolderIcon className="h-4 w-4 mr-2 text-blue-500" />
+                    ) : (
+                      <FileIcon className={cn(
+                        "h-4 w-4 mr-2",
+                        isJsonFile ? "text-gray-500" : "text-gray-300"
+                      )} />
+                    )}
+                    <span>{entry.name}</span>
+                    {entry.type === "tree" && (
+                      <ChevronRight className="h-4 w-4 ml-auto" />
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <div className="px-3 py-2 text-sm text-gray-500">
