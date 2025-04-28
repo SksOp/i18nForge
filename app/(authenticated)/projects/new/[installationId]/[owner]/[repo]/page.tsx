@@ -18,6 +18,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import BranchList from "@/components/branchList";
+import { toast } from "sonner";
 
 const langFileSchema = z.object({
   path: z
@@ -267,7 +269,16 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
       ],
     },
   });
-  const createProjectMutation = useMutation({ mutationFn: createProject });
+  const createProjectMutation = useMutation({
+    mutationFn: createProject,
+    onError: (error) => {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
+    }
+  });
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "langFiles",
@@ -277,32 +288,29 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   // Get branch from URL
   const [branch, setBranch] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      setBranch(searchParams.get("branch"));
-    }
-  }, []);
-
-  if (!branch) {
-    return (
-      <div className="flex justify-center p-8">
-        <Loader className="animate-spin mr-2" />
-        <span>Loading branch information...</span>
-      </div>
-    );
-  }
-
   const onSubmit = async (data: FormValues) => {
-    const project = await createProjectMutation.mutateAsync({
-      name: `${owner}/${repo}`,
-      owner: owner,
-      ownerType: "user",
-      paths: data.langFiles,
-      branch: branch,
-      repoName: repo,
-    });
-    router.push(`/projects/${project.id}`);
+    try {
+      const project = await createProjectMutation.mutateAsync({
+        name: `${owner}/${repo}`,
+        owner: owner,
+        ownerType: "user",
+        paths: data.langFiles,
+        branch: branch ?? "main",
+        repoName: repo,
+      });
+      if (createProjectMutation.isSuccess) {
+        toast.success("Project created successfully");
+        router.push(`/projects/${project.id}`);
+      } else {
+        toast.error("Failed to create project");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
+    }
   };
 
   return (
@@ -318,6 +326,15 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
           </span>
         </h1>
         <Separator className="mb-6" />
+        <div className="mb-6 z-40 bg-white">
+          <BranchList
+            repoName={repo}
+            userName={owner}
+            onSelect={(branch) => {
+              setBranch(branch);
+            }}
+          />
+        </div>
 
         <p className="text-sm text-muted-foreground mb-4">
           Note: All paths should start with / representing the root of your
@@ -337,7 +354,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
                       onChange={field.onChange}
                       owner={owner}
                       repo={repo}
-                      branch={branch}
+                      branch={branch ?? "main"}
                       error={fieldState.error?.message}
                     />
                   )}

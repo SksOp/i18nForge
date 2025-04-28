@@ -1,6 +1,6 @@
 import { JsonValue } from "@prisma/client/runtime/library";
 import { queryOptions } from "@tanstack/react-query";
-
+import { toast } from "sonner";
 interface Project {
   id: string;
   name: string;
@@ -36,6 +36,9 @@ export const createProject = async (data: CreateProjectPayload) => {
     body: JSON.stringify(data),
   });
 
+  if (response.status === 400) {
+    throw new Error("Project already exists");
+  }
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Failed to create project");

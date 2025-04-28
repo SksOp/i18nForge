@@ -25,7 +25,6 @@ export async function POST(request: Request) {
     const existingProject = await prisma.project.findFirst({
       where: {
         name,
-        userId: session.githubId,
       },
     });
 

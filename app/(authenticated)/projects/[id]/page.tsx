@@ -37,7 +37,7 @@ export default function ProjectPage() {
 
   return (
     <div>
-      <TranslationsPage files={dataForTable} />
+      <TranslationsPage files={dataForTable} userName={project?.owner ?? " "} repoName={project?.repoName ?? " "} />
     </div>
   );
 }

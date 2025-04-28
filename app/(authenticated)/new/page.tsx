@@ -52,6 +52,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { Repository } from "@/components/github-repos";
 import BranchList from "@/components/branchList";
+import { toast } from "sonner";
 
 const URL_FOR_INSTALL = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL;
 
@@ -186,48 +187,6 @@ export default function HomePage() {
           </CardContent>
         </Card>
       </div>
-      {/* <div className="flex items-center justify-between mb-6">
-        <Select
-          value={selectedInstallation}
-          onValueChange={setSelectedInstallation}
-        >
-          <SelectTrigger className="w-[280px]">
-            <SelectValue placeholder="Select an installation" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {data && data.length > 0
-                ? data.map((installation: Installation) => (
-                    <SelectItem key={installation.id} value={installation.id}>
-                      {installation.type === "Organization" ? (
-                        <Globe className="mr-2 h-4 w-4 inline" />
-                      ) : (
-                        <User className="mr-2 h-4 w-4 inline" />
-                      )}
-                      {installation.name}
-                    </SelectItem>
-                  ))
-                : null}
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-sm font-normal"
-                asChild
-              >
-                <Link
-                  href={URL_FOR_INSTALL ?? "#"}
-                  className="flex items-center"
-                  target="_blank"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Install App
-                </Link>
-              </Button>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {installation && <RepoList installation={installation} />} */}
     </Layout>
   );
 }
@@ -265,28 +224,22 @@ export const RepoList = ({ installation }: { installation: Installation }) => {
               <span className="font-medium">{repo.name}</span>
               {repo.private && <Lock className="w-4 h-4" />}
             </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm">Import</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Select Branch</DialogTitle>
-                  <DialogDescription>
-                    Choose a branch to import from {repo.name}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-2">
-                  <BranchList
-                    repoName={repo.name}
-                    userName={installation.name}
-                    onSelect={(branch) => {
-                      router.push(`/projects/new/${installation.installationId}/${repo.full_name}?branch=${branch}`);
-                    }}
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button
+              size="sm"
+              onClick={async () => {
+                const loadingToast = toast.loading("Checking project status...");
+                const result = await checkForExistingProject(repo, installation);
+                toast.dismiss(loadingToast);
+
+                if (result?.projectId) {
+                  router.push(`/projects/${result?.projectId}`);
+                } else {
+                  router.push(`/projects/new/${installation.installationId}/${repo.full_name}`);
+                }
+              }}
+            >
+              Import
+            </Button>
           </div>
         ))
       ) : (
@@ -298,147 +251,17 @@ export const RepoList = ({ installation }: { installation: Installation }) => {
   );
 };
 
-// export const RepoList = ({ installation }: { installation: Installation }) => {
-//   const [search, setSearch] = useState("");
-//   const debouncedSearch = useDebounce(search, 500);
 
-//   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-//     useInfiniteQuery({
-//       ...installationRepositoriesQuery(installation.installationId, {
-//         per_page: 10,
-//         search: debouncedSearch,
-//       }),
-//       getNextPageParam: (lastPage, pages) => {
-//         return lastPage.length === 10 ? pages.length + 1 : null;
-//       },
-//     });
-
-//   const flatData = useMemo(
-//     () => data?.pages.flatMap((page) => page) ?? [],
-//     [data?.pages]
-//   );
-
-//   const table = useReactTable({
-//     data: flatData,
-//     columns: [
-//       {
-//         accessorKey: "name",
-//         header: "Name",
-//         cell: ({ row }) => (
-//           <div className="flex items-center gap-2">
-//             <Link
-//               href={row.original.html_url}
-//               target="_blank"
-//               className="flex items-center hover:underline"
-//             >
-//               {row.original.name}
-//               <ExternalLink className="ml-2 h-4 w-4" />
-//             </Link>
-//           </div>
-//         ),
-//       },
-//       {
-//         accessorKey: "size",
-//         header: "Size (KB)",
-//       },
-//       {
-//         accessorKey: "created_at",
-//         header: "Created At",
-//         cell: ({ row }) =>
-//           new Date(row.original.created_at).toLocaleDateString(),
-//       },
-//       {
-//         id: "actions",
-//         cell: ({ row }) => (
-//           <Link
-//             href={`/projects/new/${installation.installationId}/${row.original.full_name}`}
-//           >
-//             <Button size="sm" variant="outline">
-//               Create Project
-//             </Button>
-//           </Link>
-//         ),
-//       },
-//     ],
-//     getCoreRowModel: getCoreRowModel(),
-//   });
-//   console.log("table", installation, flatData);
-//   return (
-//     <div className="space-y-4">
-//       <div className="flex items-center gap-2">
-//         <Input
-//           placeholder="Search repositories..."
-//           value={search}
-//           onChange={(e) => setSearch(e.target.value)}
-//           className="max-w-sm"
-//         />
-//       </div>
-
-//       {isLoading ? (
-//         <div className="flex justify-center p-4">
-//           <Loader className="animate-spin" />
-//         </div>
-//       ) : (
-//         <div className="rounded-md border">
-//           <Table>
-//             <TableHeader>
-//               {table.getHeaderGroups().map((headerGroup) => (
-//                 <TableRow key={headerGroup.id}>
-//                   {headerGroup.headers.map((header) => (
-//                     <TableHead key={header.id}>
-//                       {header.isPlaceholder
-//                         ? null
-//                         : flexRender(
-//                             header.column.columnDef.header,
-//                             header.getContext()
-//                           )}
-//                     </TableHead>
-//                   ))}
-//                 </TableRow>
-//               ))}
-//             </TableHeader>
-//             <TableBody>
-//               {table.getRowModel().rows?.length ? (
-//                 table.getRowModel().rows.map((row) => (
-//                   <TableRow
-//                     key={row.id}
-//                     data-state={row.getIsSelected() && "selected"}
-//                   >
-//                     {row.getVisibleCells().map((cell) => (
-//                       <TableCell key={cell.id}>
-//                         {flexRender(
-//                           cell.column.columnDef.cell,
-//                           cell.getContext()
-//                         )}
-//                       </TableCell>
-//                     ))}
-//                   </TableRow>
-//                 ))
-//               ) : (
-//                 <TableRow>
-//                   <TableCell colSpan={4} className="h-24 text-center">
-//                     No repositories found.
-//                   </TableCell>
-//                 </TableRow>
-//               )}
-//             </TableBody>
-//           </Table>
-//         </div>
-//       )}
-//       {hasNextPage && (
-//         <div className="flex justify-center mt-4">
-//           <Button
-//             onClick={() => fetchNextPage()}
-//             disabled={!hasNextPage || isFetchingNextPage}
-//           >
-//             {isFetchingNextPage
-//               ? "Loading more..."
-//               : hasNextPage
-//               ? "Load More"
-//               : "Nothing more to load"}
-//           </Button>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
+const checkForExistingProject = async (repo: Repository, installation: Installation) => {
+  const res = await fetch(`/api/project/check`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: `${installation?.name}/${repo.name}`
+    })
+  });
+  const data = await res.json();
+  console.log("data", data);
+};
