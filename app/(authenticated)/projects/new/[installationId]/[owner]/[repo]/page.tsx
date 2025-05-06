@@ -20,14 +20,15 @@ import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import BranchList from "@/components/branchList";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 const langFileSchema = z.object({
   path: z
     .string()
     .min(1, "Path is required")
     .regex(/^\//, "Path must start with /")
-    .refine((path) => path.endsWith('.json'), {
-      message: "File must be a JSON file"
+    .refine((path) => path.endsWith(".json"), {
+      message: "File must be a JSON file",
     }),
   language: z.string().min(1, "Language is required"),
 });
@@ -64,24 +65,23 @@ function FilePathInput({
   const [initialLoad, setInitialLoad] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const { data: session } = useSession();
 
   const fetchFileTree = async (path: string) => {
     try {
-      const response = await fetch(
-        `/api/project/meta/tree`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            repo,
-            userName: owner,
-            branch,
-            path
-          })
-        }
-      );
+      const response = await fetch(`/api/project/meta/tree`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-accessToken": session?.accessToken || "",
+        },
+        body: JSON.stringify({
+          repo,
+          userName: owner,
+          branch,
+          path,
+        }),
+      });
       const data = await response.json();
       console.log(`Fetched tree for path: "${path}"`, data);
       return data;
@@ -94,7 +94,7 @@ function FilePathInput({
   const { data: fileTree, refetch } = useQuery({
     queryKey: ["fileTree", repo, owner, branch, currentPath],
     queryFn: () => fetchFileTree(currentPath),
-    enabled: showSuggestions || initialLoad
+    enabled: showSuggestions || initialLoad,
   });
 
   // Initial load of root directory
@@ -146,7 +146,8 @@ function FilePathInput({
       // Handle backspace - adjust path as needed
       const lastSlashIndex = newValue.lastIndexOf("/");
       if (lastSlashIndex >= 0) {
-        const parentPath = lastSlashIndex === 0 ? "" : newValue.substring(0, lastSlashIndex);
+        const parentPath =
+          lastSlashIndex === 0 ? "" : newValue.substring(0, lastSlashIndex);
         setCurrentPath(parentPath);
         setShowSuggestions(true);
         refetch();
@@ -191,9 +192,7 @@ function FilePathInput({
         onFocus={handleFocus}
         className={cn(error && "border-red-500 focus-visible:ring-red-500")}
       />
-      {error && (
-        <p className="text-sm text-red-500 mt-1">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
 
       {showSuggestions && fileTree && (
         <div
@@ -207,9 +206,10 @@ function FilePathInput({
                   className="px-3 py-2 flex items-center text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
                   onClick={() => {
                     const lastSlashIndex = currentPath.lastIndexOf("/");
-                    const parentPath = lastSlashIndex > 0
-                      ? currentPath.substring(0, lastSlashIndex)
-                      : "";
+                    const parentPath =
+                      lastSlashIndex > 0
+                        ? currentPath.substring(0, lastSlashIndex)
+                        : "";
                     setCurrentPath(parentPath);
                     onChange(parentPath ? `${parentPath}/` : "/");
                     refetch();
@@ -220,7 +220,8 @@ function FilePathInput({
                 </li>
               )}
               {fileTree.map((entry: FileEntry, index: number) => {
-                const isJsonFile = entry.type === "blob" && entry.name.endsWith('.json');
+                const isJsonFile =
+                  entry.type === "blob" && entry.name.endsWith(".json");
                 const isDisabled = entry.type === "blob" && !isJsonFile;
 
                 return (
@@ -235,10 +236,12 @@ function FilePathInput({
                     {entry.type === "tree" ? (
                       <FolderIcon className="h-4 w-4 mr-2 text-blue-500" />
                     ) : (
-                      <FileIcon className={cn(
-                        "h-4 w-4 mr-2",
-                        isJsonFile ? "text-gray-500" : "text-gray-300"
-                      )} />
+                      <FileIcon
+                        className={cn(
+                          "h-4 w-4 mr-2",
+                          isJsonFile ? "text-gray-500" : "text-gray-300"
+                        )}
+                      />
                     )}
                     <span>{entry.name}</span>
                     {entry.type === "tree" && (
@@ -277,7 +280,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
       } else {
         toast.error("An unknown error occurred");
       }
-    }
+    },
   });
   const { fields, append, remove } = useFieldArray({
     control: form.control,

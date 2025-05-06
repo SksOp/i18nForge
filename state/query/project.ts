@@ -92,7 +92,7 @@ export const projectQuery = (projectId: string) => {
   });
 };
 
-export const getFileContent = (projectId: string) => {
+export const getFileContent = (projectId: string, accessToken?: string) => {
   return queryOptions({
     queryKey: ["fileContent", projectId],
     queryFn: async () => {
@@ -100,6 +100,7 @@ export const getFileContent = (projectId: string) => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          "x-user-accessToken": accessToken || "",
         },
       });
 
@@ -113,17 +114,19 @@ export const getFileContent = (projectId: string) => {
   });
 };
 
-
 export const branchQuery = (userName: string, repoName: string) => {
   return queryOptions({
     queryKey: ["branch", repoName, userName],
     queryFn: async () => {
-      const response = await fetch(`/api/project/meta/branch?repo=${repoName}&userName=${userName}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/project/meta/branch?repo=${repoName}&userName=${userName}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       return response.json() as Promise<{ branches: string[] }>;
     },
   });

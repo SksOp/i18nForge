@@ -9,14 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Project } from "@prisma/client";
 import { Path } from "@prisma/client/runtime/library";
 import TranslationsPage from "@/components/translation";
+import { useSession } from "next-auth/react";
 
 export default function ProjectPage() {
   const params = useParams();
 
-  const { data: project, isLoading, error } = useQuery(projectQuery(params.id));
-
+  const {
+    data: project,
+    isLoading,
+    error,
+  } = useQuery(projectQuery(params.id as string));
+  const { data: session } = useSession();
   const { data: fileContent, isLoading: fileContentLoading } = useQuery(
-    getFileContent(params.id)
+    getFileContent(params.id as string, session?.accessToken || "")
   );
 
   if (isLoading || fileContentLoading) {
@@ -37,7 +42,11 @@ export default function ProjectPage() {
 
   return (
     <div>
-      <TranslationsPage files={dataForTable} userName={project?.owner ?? " "} repoName={project?.repoName ?? " "} />
+      <TranslationsPage
+        files={dataForTable}
+        userName={project?.owner ?? " "}
+        repoName={project?.repoName ?? " "}
+      />
     </div>
   );
 }

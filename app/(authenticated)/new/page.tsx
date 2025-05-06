@@ -12,8 +12,13 @@ import {
   installationsQuery,
   installationRepositoriesQuery,
 } from "@/state/query/installation";
-import { useInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useSuspenseQuery,
+  useQuery,
+} from "@tanstack/react-query";
 import { Installation } from "@/app/api/github/installations/route";
+import { Repository } from "@/app/api/github/repositories/[installtionId]/route";
 import {
   User,
   Plus,
@@ -27,37 +32,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import useDebounce from "@/hooks/use-debounce";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-} from "@tanstack/react-table";
 import Layout from "@/layout/layout";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import Spinner from "@/components/spinner";
-import { branchQuery } from "@/state/query/project";
-import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DialogContent } from "@/components/ui/dialog";
-import { DialogTrigger } from "@/components/ui/dialog";
-import { Dialog } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { Repository } from "@/components/github-repos";
-import BranchList from "@/components/branchList";
 import { toast } from "sonner";
 
 const URL_FOR_INSTALL = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL;
 
 export default function HomePage() {
-  const router = useRouter();
   const { data, isLoading } = useSuspenseQuery(installationsQuery());
   const [selectedInstallation, setSelectedInstallation] = useState<string>(
     data[0]?.id
@@ -195,53 +179,83 @@ export const RepoList = ({ installation }: { installation: Installation }) => {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery({
-      ...installationRepositoriesQuery(installation.installationId, {
-        per_page: 10,
-        search: debouncedSearch,
-      }),
-      getNextPageParam: (lastPage: Repository[], pages: Repository[][]) => {
-        return lastPage.length === 10 ? pages.length + 1 : null;
-      },
-    });
-
-  const flatData = useMemo(
-    () => data?.pages?.flatMap((page: Repository[]) => page) ?? [],
-    [data?.pages]
+  const { data: repositories, isLoading } = useQuery(
+    installationRepositoriesQuery(installation.installationId, {
+      per_page: 10,
+      page,
+      search: debouncedSearch,
+    })
   );
-  console.log("table", installation, flatData);
-  return (
-    <div className="border rounded-md divide-y ">
-      {flatData.length > 0 ? (
-        flatData.map((repo) => (
-          <div
-            key={repo.id}
-            className="p-4 flex items-center justify-between hover:bg-muted/50"
-          >
-            <div className="flex gap-2 items-center">
-              <span className="font-medium">{repo.name}</span>
-              {repo.private && <Lock className="w-4 h-4" />}
-            </div>
-            <Button
-              size="sm"
-              onClick={async () => {
-                const loadingToast = toast.loading("Checking project status...");
-                const result = await checkForExistingProject(repo, installation);
-                toast.dismiss(loadingToast);
 
-                if (result?.projectId) {
-                  router.push(`/projects/${result?.projectId}`);
-                } else {
-                  router.push(`/projects/new/${installation.installationId}/${repo.full_name}`);
-                }
-              }}
+  const handleLoadMore = () => {
+    setPage((prev) => prev + 1);
+  };
+
+  const checkForExistingProject = async (
+    repo: Repository,
+    installation: Installation
+  ) => {
+    const res = await fetch(`/api/project/check`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: `${installation?.name}/${repo.name}`,
+      }),
+    });
+    const data = await res.json();
+    return data;
+  };
+
+  return (
+    <div className="border rounded-md divide-y">
+      {repositories && repositories.length > 0 ? (
+        <>
+          {repositories.map((repo: Repository) => (
+            <div
+              key={repo.id}
+              className="p-4 flex items-center justify-between hover:bg-muted/50"
             >
-              Import
-            </Button>
-          </div>
-        ))
+              <div className="flex gap-2 items-center">
+                <span className="font-medium">{repo.name}</span>
+                {repo.private && <Lock className="w-4 h-4" />}
+              </div>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  const loadingToast = toast.loading(
+                    "Checking project status..."
+                  );
+                  const result = await checkForExistingProject(
+                    repo,
+                    installation
+                  );
+                  toast.dismiss(loadingToast);
+
+                  if (result?.projectId) {
+                    router.push(`/projects/${result.projectId}`);
+                  } else {
+                    router.push(
+                      `/projects/new/${installation.installationId}/${repo.full_name}`
+                    );
+                  }
+                }}
+              >
+                Import
+              </Button>
+            </div>
+          ))}
+          {repositories.length === 10 && (
+            <div className="p-4 text-center">
+              <Button variant="outline" onClick={handleLoadMore}>
+                Load More
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="p-8 text-center text-muted-foreground">
           No repositories found matching your search.
@@ -249,19 +263,4 @@ export const RepoList = ({ installation }: { installation: Installation }) => {
       )}
     </div>
   );
-};
-
-
-const checkForExistingProject = async (repo: Repository, installation: Installation) => {
-  const res = await fetch(`/api/project/check`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      name: `${installation?.name}/${repo.name}`
-    })
-  });
-  const data = await res.json();
-  console.log("data", data);
 };
