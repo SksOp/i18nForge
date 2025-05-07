@@ -166,7 +166,7 @@ export default function TranslationsPage({
             <p className="text-sm text-muted-foreground">Loading branches...</p>
           ) : (
             <>
-              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+              <Select value={selectedBranch} onValueChange={handleBranchChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Checkout" />
                 </SelectTrigger>
