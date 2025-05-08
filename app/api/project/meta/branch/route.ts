@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { MetaAPI } from "../meta.expose";
 import prisma from "@/lib/prisma";
 import { getOwnerAndRepo } from "../meta.comman";
-
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 
 export async function GET(request: NextRequest) {
     try {
-        const token = request.headers.get('x-user-accessToken');
+        const session = await getServerSession(authOptions);
+
+        if (!session?.accessToken) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+
+        const token = session.accessToken;
         const repo = request.nextUrl.searchParams.get("repo");
         const userName = request.nextUrl.searchParams.get("userName");
         if (!repo || repo === "" || userName === null || token === null) {
