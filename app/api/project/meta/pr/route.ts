@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MetaAPI } from "../meta.expose";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "next-auth";
 
 export async function POST(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
-        const token = request.headers.get('x-user-accessToken');
+
         const owner = searchParams.get("owner");
         const repo = searchParams.get("repo");
         const branch = searchParams.get("branch");
-
-        if (!token || !owner || !repo || !branch) {
+        const session = await getServerSession(authOptions);
+        if (!session?.accessToken) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        const accessToken = session.accessToken;
+        if (!accessToken || !owner || !repo || !branch) {
             return NextResponse.json(
                 { error: "Missing required parameters" },
                 { status: 400 }
@@ -26,7 +32,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const pr = await MetaAPI.createPullRequest(token, owner, repo, branch, title, description);
+        const pr = await MetaAPI.createPullRequest(accessToken, owner, repo, branch, title, description);
         return NextResponse.json(pr);
     } catch (error) {
         console.error("Error creating pull request:", error);

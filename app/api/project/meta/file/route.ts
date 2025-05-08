@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MetaAPI } from "../meta.expose";
 import prisma from "@/lib/prisma";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getServerSession } from "next-auth";
+import { FileContentForCommit } from "../meta.utils";
 
 export async function GET(request: NextRequest) {
-  const accessToken = request.headers.get("x-user-accessToken");
+  const session = await getServerSession(authOptions);
+  if (!session?.accessToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const accessToken = session.accessToken;
   if (!accessToken) {
     return NextResponse.json(
       { error: "Missing access token" },
@@ -16,6 +23,7 @@ export async function GET(request: NextRequest) {
       { status: 400 }
     );
   }
+  const branch = request.nextUrl.searchParams.get("branch") ?? "main";
 
   const project = await prisma.project.findUnique({
     where: {
@@ -27,7 +35,6 @@ export async function GET(request: NextRequest) {
   }
 
   const { paths, owner, name } = project;
-  console.log("hiiii", paths);
   if (!paths) {
     return NextResponse.json(
       { error: "Missing required parameters" },
@@ -35,10 +42,9 @@ export async function GET(request: NextRequest) {
     );
   }
   const path = (Array.isArray(paths) ? paths : [paths]).map((p: any) => {
-    const url = new URL(`https://github.com/${name}/blob/main${p.path}`);
+    const url = new URL(`https://github.com/${name}/blob/${branch}${p.path}`);
     return url.pathname.substring(1);
   });
-  console.log("path", JSON.stringify(path, null, 2));
   const fileContent = await MetaAPI.getFilesContent(path, accessToken, name);
   return NextResponse.json({ fileContent }, { status: 200 });
 }
@@ -69,14 +75,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const fileContent: FileContentForCommit[] = content.map((file: any) => ({
+      path: file.path,
+      content: file.content,
+      branch: branch,
+    }));
 
     const result = await MetaAPI.commitContent(
       token,
       owner,
       repo,
       branch,
-      path,
-      content,
+      fileContent,
       message
     );
     return NextResponse.json(result);
