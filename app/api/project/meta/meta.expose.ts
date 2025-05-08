@@ -1,4 +1,4 @@
-import { MetaUtils } from "./meta.utils";
+import { FileContentForCommit, MetaUtils } from "./meta.utils";
 
 export const MetaAPI = {
     getBranchList: (token: string, owner: string, repo: string) => {
@@ -10,8 +10,8 @@ export const MetaAPI = {
     createBranch: (token: string, owner: string, repo: string, branch: string) => {
         return MetaUtils.createBranch(token, owner, repo, branch);
     },
-    commitContent: (token: string, owner: string, repo: string, branch: string, path: string, content: string, message: string) => {
-        return MetaUtils.commitContent(token, owner, repo, branch, path, content, message);
+    commitContent: (token: string, owner: string, repo: string, branch: string, fileContent: FileContentForCommit[], message: string) => {
+        return MetaUtils.commitContent(token, owner, repo, branch, fileContent, message);
     },
     createPullRequest: (token: string, owner: string, repo: string, branch: string, title: string, body: string) => {
         return MetaUtils.createPullRequest(token, owner, repo, branch, title, body);
