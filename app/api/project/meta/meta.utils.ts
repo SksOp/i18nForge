@@ -1,10 +1,17 @@
 import { gql, request } from 'graphql-request';
 
+
+export interface FileContentForCommit {
+    path: string;
+    content: string;
+}
+
+
 export class MetaUtils {
     private static readonly GITHUB_API_URL = 'https://api.github.com/graphql';
 
 
-    public static async getFileContent(paths: string[], token: string, name: string): Promise<string[] | null> {
+    public static async getFileContent(paths: string[], token: string, name: string): Promise<{ path: string, content: string }[] | null> {
         const repo = name.split("/")[1];
         const owner = name.split("/")[0];
 
@@ -23,11 +30,14 @@ export class MetaUtils {
             const repository = (data as any).repository;
             if (!repository) return null;
 
-            const contents: string[] = [];
+            const contents: { path: string, content: string }[] = [];
             for (let i = 0; i < paths.length; i++) {
                 const fileKey = `file${i}`;
                 const fileData = repository[fileKey];
-                contents.push(fileData?.text ?? '');
+                contents.push({
+                    path: paths[i],
+                    content: fileData?.text ?? ''
+                });
             }
             return contents;
         } catch (error) {
@@ -78,14 +88,16 @@ export class MetaUtils {
             return null;
         }
     }
-    public static async commitContent(token: string, owner: string, repo: string, branch: string, path: string, content: string, message: string) {
+    public static async commitContent(token: string, owner: string, repo: string, branch: string, fileContent: FileContentForCommit[], message: string) {
         try {
             const oid = await this.getOID(token, owner, repo, branch);
             if (!oid) return null;
 
-            // Extract the actual file path from the URL if it's a GitHub URL
-            const actualPath = this.extractPathFromUrl(path);
-            const encodedContent = Buffer.from(content).toString('base64');
+            const additions = fileContent.map(file => {
+                const actualPath = this.extractPathFromUrl(file.path);
+                const encodedContent = Buffer.from(file.content).toString('base64');
+                return `{path: "${actualPath}", contents: "${encodedContent}"}`;
+            }).join(',');
 
             const query = gql`
                 mutation {
@@ -98,12 +110,7 @@ export class MetaUtils {
                             headline: "${message}"
                         },
                         fileChanges: {
-                            additions: [
-                                {
-                                    path: "${actualPath}",
-                                    contents: "${encodedContent}"
-                                }
-                            ]
+                            additions: [${additions}]
                         },
                         expectedHeadOid: "${oid}"
                     }) {
@@ -123,7 +130,6 @@ export class MetaUtils {
     }
     public static async createPullRequest(token: string, owner: string, repo: string, branch: string, title: string, body: string) {
         try {
-            // Get repository ID first
             const repoQuery = gql`
                 query {
                     repository(owner: "${owner}", name: "${repo}") {
@@ -260,6 +266,7 @@ export class MetaUtils {
         };
     }
     private static async _queryRunner(token: string, query: string): Promise<any> {
+        console.log('query', query);
         try {
             if (!token || !this.GITHUB_API_URL || !query) {
                 throw new Error('Missing required parameters in _queryRunner');
@@ -268,7 +275,6 @@ export class MetaUtils {
                 Authorization: `Bearer ${token}`
             };
             const data = await request(this.GITHUB_API_URL, query, {}, headers);
-            console.log('data after request: ', data);
             return data;
         } catch (error) {
             console.error('Error executing GraphQL query:', error);
