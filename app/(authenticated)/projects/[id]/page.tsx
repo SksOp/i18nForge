@@ -32,10 +32,19 @@ export default function ProjectPage() {
     );
   }
 
-  const dataForTable = {};
+  const dataForTable: Record<string, any> = {};
   if (fileContent?.fileContent) {
     project?.paths.forEach((path, index) => {
-      dataForTable[path.language] = JSON.parse(fileContent?.fileContent[index]);
+      try {
+        const content = fileContent.fileContent[index];
+        if (typeof content === 'object') {
+          dataForTable[path.language] = content;
+        } else if (typeof content === 'string') {
+          dataForTable[path.language] = JSON.parse(content);
+        }
+      } catch (error) {
+        console.error(`Error parsing content for ${path.language}:`, error);
+      }
     });
   }
   console.log("dataForTable", dataForTable);

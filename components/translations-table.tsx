@@ -7,10 +7,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TranslationEntry } from "@/types/translations";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils"; // if using classnames util
+import { DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogDescription } from "@radix-ui/react-dialog";
+import { Label } from "./ui/label";
+import { useQueryClient } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
 
 interface TranslationsTableProps {
   data: TranslationEntry[];
@@ -41,6 +46,37 @@ export function TranslationsTable({
 
   const [editValue, setEditValue] = useState("");
   const [editedValues, setEditedValues] = useState<EditedValue[]>([]);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const params = useParams();
+  useEffect(() => {
+    setProjectId(params.id as string);
+  }, [params.id]);
+
+
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    const savedDrafts = localStorage.getItem(`translation-drafts-${projectId}`);
+    if (savedDrafts) {
+      try {
+        const parsedDrafts = JSON.parse(savedDrafts);
+        setEditedValues(parsedDrafts);
+      } catch (error) {
+        console.error("Failed to parse saved drafts:", error);
+      }
+    }
+  }, [projectId]);
+
+
+
+
+  useEffect(() => {
+
+    if (!projectId || editedValues.length === 0) return;
+    localStorage.setItem(`translation-drafts-${projectId}`, JSON.stringify(editedValues));
+  }, [editedValues, projectId]);
 
   const handleCellClick = (
     key: string,
@@ -120,27 +156,145 @@ export function TranslationsTable({
       onTranslationUpdate?.(v.key, v.language, v.newValue);
     });
 
-    setEditedValues(
-      (prev) => prev.filter((v) => v.key !== key) // remove after commit
-    );
+    // Don't remove from editedValues anymore - keep in draft mode
+    // We now store these edits locally until commit
+  };
+
+  const [commitMessage, setCommitMessage] = useState("");
+  const [showCommitDialog, setShowCommitDialog] = useState(false);
+  const [branchName, setBranchName] = useState("main");
+
+  const handleCommit = async () => {
+    if (!projectId) {
+      console.error("Missing project ID");
+      return;
+    }
+
+    try {
+      // Prepare file content for commit
+      // Assume that editedValues will be transformed to file content 
+      // in the appropriate format for the backend
+
+      // Format the data according to the backend's expected structure
+      const transformedContent = [
+        {
+          path: "translations.json", // You may need to adjust this path as needed
+          content: JSON.stringify(editedValues)
+        }
+      ];
+
+      const requestBody = {
+        branch: branchName,
+        content: transformedContent
+      };
+
+      const response = await fetch(`/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(commitMessage)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to commit changes');
+      }
+
+      // Invalidate query cache to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["fileContent", projectId] });
+
+      // Clear local storage after successful commit
+      localStorage.removeItem(`translation-drafts-${projectId}`);
+
+      setEditedValues([]);
+      setShowCommitDialog(false);
+      setCommitMessage("");
+    } catch (error) {
+      console.error("Error committing changes:", error);
+    }
   };
 
   const handleSaveAll = () => {
     editedValues.forEach((v) => {
       onTranslationUpdate?.(v.key, v.language, v.newValue);
     });
+    setShowCommitDialog(true);
+  };
 
+  const clearDrafts = () => {
+    if (projectId) {
+      localStorage.removeItem(`translation-drafts-${projectId}`);
+    }
     setEditedValues([]);
   };
 
   return (
     <div className="overflow-auto">
-      <div className="flex justify-end my-2">
-        {editedValues.length > 0 && (
-          <Button variant="default" onClick={handleSaveAll}>
-            Save All Changes
-          </Button>
-        )}
+      <Dialog open={showCommitDialog} onOpenChange={setShowCommitDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Commit Changes</DialogTitle>
+            <DialogDescription>
+              Enter a message to describe your changes
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="branch">Branch</Label>
+              <Input
+                id="branch"
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+                placeholder="main"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="message">Commit message</Label>
+              <Input
+                id="message"
+                value={commitMessage}
+                onChange={(e) => setCommitMessage(e.target.value)}
+                placeholder="Update translations"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-transparent border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
+              onClick={() => setShowCommitDialog(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4"
+              onClick={handleCommit}
+            >
+              Commit
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="flex justify-between my-2">
+        <div>
+          {editedValues.length > 0 && (
+            <div className="text-sm text-amber-600">
+              You have {editedValues.length} pending changes
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {editedValues.length > 0 && (
+            <>
+              <Button variant="outline" onClick={clearDrafts}>
+                Discard Drafts
+              </Button>
+              <Button variant="default" onClick={handleSaveAll}>
+                Commit Changes
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       <Table className="table-fixed w-full">
         <TableHeader className="sticky top-0 bg-background z-10">

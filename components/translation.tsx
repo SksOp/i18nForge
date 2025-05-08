@@ -92,7 +92,7 @@ export default function TranslationsPage({
     const loadingToast = toast.loading("Checking branch...");
     try {
       const response = await fetch(
-        `/api/project/meta/branch/files?branch=${value}&id=${id}`,
+        `/api/project/meta/file?id=${id}&branch=${value}`,
         {
           method: "GET",
           headers: {
