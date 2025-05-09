@@ -36,10 +36,10 @@ export default function ProjectPage() {
   if (fileContent?.fileContent) {
     project?.paths.forEach((path, index) => {
       try {
-        const content = fileContent.fileContent[index];
-        if (typeof content === 'object') {
+        const content = fileContent.fileContent[index].content;
+        if (typeof content === "object") {
           dataForTable[path.language] = content;
-        } else if (typeof content === 'string') {
+        } else if (typeof content === "string") {
           dataForTable[path.language] = JSON.parse(content);
         }
       } catch (error) {
@@ -47,7 +47,7 @@ export default function ProjectPage() {
       }
     });
   }
-  console.log("dataForTable", dataForTable);
+  console.log("dataForTable", JSON.stringify(dataForTable));
 
   return (
     <div>

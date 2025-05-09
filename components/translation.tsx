@@ -103,8 +103,24 @@ export default function TranslationsPage({
       );
       if (!response.ok) throw new Error("Failed to fetch branch files");
 
-      const branchFiles = await response.json();
-      setFilesState(branchFiles); // <-- update state
+      const fileContent = await response.json();
+      console.log("branchFiles", fileContent);
+      const dataForTable: Record<string, any> = {};
+      if (fileContent?.fileContent) {
+        fileNames.forEach((path, index) => {
+          try {
+            const content = fileContent.fileContent[index].content;
+            if (typeof content === "object") {
+              dataForTable[path] = content;
+            } else if (typeof content === "string") {
+              dataForTable[path] = JSON.parse(content);
+            }
+          } catch (error) {
+            console.error(`Error parsing content for ${path}:`, error);
+          }
+        });
+      }
+      setFilesState(dataForTable); // <-- update state
       setSelectedBranch(value);
       toast.success("Branch files loaded successfully", {
         id: loadingToast,

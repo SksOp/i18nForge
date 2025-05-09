@@ -109,7 +109,9 @@ export const getFileContent = (projectId: string, accessToken?: string) => {
         throw new Error(error.error || "Failed to get file content");
       }
 
-      return response.json() as Promise<{ fileContent: string[] }>;
+      return response.json() as Promise<{
+        fileContent: { path: string; content: string }[];
+      }>;
     },
   });
 };
