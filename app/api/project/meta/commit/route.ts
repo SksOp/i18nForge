@@ -35,15 +35,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-
         const requestBody = await request.json();
         const { branch, content } = requestBody;
-        const fileContent: FileContentForCommit[] = content.map((file: any) => ({
-            path: file.path,
-            content: file.content,
-            branch: branch,
-        }));
-        console.log("fileContent", fileContent);
+
         if (!branch || !content) {
             return NextResponse.json(
                 { error: "Missing content in request body" },
@@ -51,17 +45,33 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // return NextResponse.json({
-        //     status: 200,
-        //     message: "Commit successful"
-        // });
-
+        const paths = project.paths as { path: string, projectPath: string, language: string }[];
+        console.log("project content for commit: ", content);
+        const fileContent: FileContentForCommit[] = content.map((file: { path: string, language: string, content: string }) => {
+            const matchedPath = paths.find((p) => p.language.toLowerCase() === file.path.toLowerCase());
+            if (!matchedPath) {
+                throw new Error(`No matching path found for language: ${file.language}`);
+            }
+            console.log("matchedPath", matchedPath);
+            console.log("file.content", file.content);
+            return {
+                path: matchedPath.path.startsWith("/") ? matchedPath.path.slice(1) : matchedPath.path,
+                content: file.content,
+                branch: branch,
+            };
+        });
+        console.log("fileContent", fileContent);
         const result = await MetaAPI.commitContent(session.accessToken, project.owner, project.repoName, branch, fileContent, message);
-        return NextResponse.json(result);
+        return NextResponse.json({
+            status: 200,
+            message: "Commit successful",
+            result
+        });
+
     } catch (error) {
         console.error("Error committing changes:", error);
         return NextResponse.json(
-            { error: "Failed to commit changes" },
+            { error: error instanceof Error ? error.message : "Failed to commit changes" },
             { status: 500 }
         );
     }
