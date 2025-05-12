@@ -1,3 +1,13 @@
+"use client";
+
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  flexRender,
+  ColumnDef,
+  Row,
+} from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -7,23 +17,34 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TranslationEntry } from "@/types/translations";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "./ui/button";
-import { cn } from "@/lib/utils"; // if using classnames util
-import { DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Dialog, DialogContent, DialogDescription } from "@radix-ui/react-dialog";
-import { Label } from "./ui/label";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "./ui/select";
 
 interface TranslationsTableProps {
   data: TranslationEntry[];
   fileNames: string[];
-  filters?: {
-    searchTerm: string;
-    selectedLanguage: string;
-  };
+  allBranches: string[];
+  selectedBranch: string;
   onTranslationUpdate?: (key: string, language: string, value: string) => void;
 }
 
@@ -37,46 +58,60 @@ interface EditedValue {
 export function TranslationsTable({
   data,
   fileNames,
+  selectedBranch,
+  allBranches,
   onTranslationUpdate,
 }: TranslationsTableProps) {
   const [editingCell, setEditingCell] = useState<{
     key: string;
     language: string;
   } | null>(null);
-
   const [editValue, setEditValue] = useState("");
   const [editedValues, setEditedValues] = useState<EditedValue[]>([]);
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const [commitMessage, setCommitMessage] = useState("");
+  const [showCommitDialog, setShowCommitDialog] = useState(false);
+  const [branchName, setBranchName] = useState(selectedBranch);
+
   const queryClient = useQueryClient();
   const params = useParams();
+  const [projectId, setProjectId] = useState<string | null>(null);
+
   useEffect(() => {
     setProjectId(params.id as string);
   }, [params.id]);
 
-
-
   useEffect(() => {
     if (!projectId) return;
-
     const savedDrafts = localStorage.getItem(`translation-drafts-${projectId}`);
     if (savedDrafts) {
       try {
-        const parsedDrafts = JSON.parse(savedDrafts);
-        setEditedValues(parsedDrafts);
-      } catch (error) {
-        console.error("Failed to parse saved drafts:", error);
+        setEditedValues(JSON.parse(savedDrafts));
+      } catch (err) {
+        console.error("Failed to load drafts:", err);
       }
     }
   }, [projectId]);
 
-
-
-
   useEffect(() => {
-
-    if (!projectId || editedValues.length === 0) return;
-    localStorage.setItem(`translation-drafts-${projectId}`, JSON.stringify(editedValues));
+    if (projectId) {
+      localStorage.setItem(
+        `translation-drafts-${projectId}`,
+        JSON.stringify(editedValues)
+      );
+    }
   }, [editedValues, projectId]);
+
+  const isCellEdited = (key: string, language: string) =>
+    editedValues.some(
+      (v) =>
+        v.key === key &&
+        v.language === language &&
+        v.newValue !== v.originalValue
+    );
+
+  const getEditedValue = (key: string, language: string) =>
+    editedValues.find((v) => v.key === key && v.language === language)
+      ?.newValue;
 
   const handleCellClick = (
     key: string,
@@ -87,306 +122,278 @@ export function TranslationsTable({
     setEditValue(currentValue);
   };
 
-  const handleEditChange = (value: string) => {
-    setEditValue(value);
-  };
-
   const commitEdit = () => {
     if (editingCell) {
       const originalValue =
-        data.find((d) => d.key === editingCell.key)?.[editingCell.language] ||
+        data.find((d) => d.key === editingCell.key)?.[editingCell.language] ??
         "";
-
       setEditedValues((prev) => {
         const existingIndex = prev.findIndex(
           (v) =>
             v.key === editingCell.key && v.language === editingCell.language
         );
+        const updated: EditedValue = {
+          key: editingCell.key,
+          language: editingCell.language,
+          newValue: editValue,
+          originalValue,
+        };
 
         if (existingIndex >= 0) {
-          const newValues = [...prev];
-          newValues[existingIndex] = {
-            ...newValues[existingIndex],
-            newValue: editValue,
-          };
-          return newValues;
+          const next = [...prev];
+          next[existingIndex] = updated;
+          return next;
         }
-
-        return [
-          ...prev,
-          {
-            key: editingCell.key,
-            language: editingCell.language,
-            newValue: editValue,
-            originalValue,
-          },
-        ];
+        return [...prev, updated];
       });
     }
-
     setEditingCell(null);
     setEditValue("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      commitEdit();
-    } else if (e.key === "Escape") {
-      setEditingCell(null);
-      setEditValue("");
-    }
+    if (e.key === "Enter") commitEdit();
+    else if (e.key === "Escape") setEditingCell(null);
   };
-
-  const isCellEdited = (key: string, language: string) => {
-    return editedValues.some(
-      (v) =>
-        v.key === key &&
-        v.language === language &&
-        v.newValue !== v.originalValue
-    );
-  };
-
-  const getEditedValue = (key: string, language: string): string | undefined =>
-    editedValues.find((v) => v.key === key && v.language === language)
-      ?.newValue;
 
   const handleSaveRow = (key: string) => {
     const rowEdits = editedValues.filter((v) => v.key === key);
     rowEdits.forEach((v) => {
       onTranslationUpdate?.(v.key, v.language, v.newValue);
     });
-
-    // Don't remove from editedValues anymore - keep in draft mode
-    // We now store these edits locally until commit
   };
 
-  const [commitMessage, setCommitMessage] = useState("");
-  const [showCommitDialog, setShowCommitDialog] = useState(false);
-  const [branchName, setBranchName] = useState("main");
-
   const handleCommit = async () => {
-    if (!projectId) {
-      console.error("Missing project ID");
-      return;
-    }
-
+    if (!projectId) return;
     try {
-      // Prepare file content for commit
-      // Assume that editedValues will be transformed to file content 
-      // in the appropriate format for the backend
-
-      // Format the data according to the backend's expected structure
       const transformedContent = [
         {
-          path: "translations.json", // You may need to adjust this path as needed
-          content: JSON.stringify(editedValues)
-        }
+          path: "translations.json",
+          content: JSON.stringify(editedValues),
+        },
       ];
 
-      const requestBody = {
-        branch: branchName,
-        content: transformedContent
-      };
+      const res = await fetch(
+        `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(
+          commitMessage
+        )}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            branch: branchName,
+            content: transformedContent,
+          }),
+        }
+      );
 
-      const response = await fetch(`/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(commitMessage)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
+      if (!res.ok) throw new Error("Failed to commit changes");
 
-      if (!response.ok) {
-        throw new Error('Failed to commit changes');
-      }
-
-      // Invalidate query cache to refresh the data
       queryClient.invalidateQueries({ queryKey: ["fileContent", projectId] });
-
-      // Clear local storage after successful commit
       localStorage.removeItem(`translation-drafts-${projectId}`);
-
       setEditedValues([]);
       setShowCommitDialog(false);
       setCommitMessage("");
-    } catch (error) {
-      console.error("Error committing changes:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleSaveAll = () => {
-    editedValues.forEach((v) => {
-      onTranslationUpdate?.(v.key, v.language, v.newValue);
-    });
-    setShowCommitDialog(true);
-  };
+  const columns = useMemo<ColumnDef<TranslationEntry>[]>(
+    () => [
+      {
+        header: "Translation Key",
+        accessorKey: "key",
+        cell: ({ getValue }) => (
+          <div className="font-mono text-sm truncate">{getValue<string>()}</div>
+        ),
+      },
+      ...fileNames.map((lang) => ({
+        header: lang.toUpperCase(),
+        accessorKey: lang,
+        cell: ({ row }: { row: Row<TranslationEntry> }) => {
+          const entry = row.original;
+          const key = entry.key;
+          const editedVal = getEditedValue(key, lang);
+          const isEditing =
+            editingCell?.key === key && editingCell?.language === lang;
+          const isEdited = isCellEdited(key, lang);
 
-  const clearDrafts = () => {
-    if (projectId) {
-      localStorage.removeItem(`translation-drafts-${projectId}`);
-    }
-    setEditedValues([]);
-  };
+          return (
+            <div
+              className={cn(
+                "p-2 truncate cursor-pointer",
+                isEdited ? "bg-yellow-100" : ""
+              )}
+              onClick={() =>
+                handleCellClick(key, lang, editedVal ?? entry[lang] ?? "")
+              }
+            >
+              {isEditing ? (
+                <Input
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={commitEdit}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                />
+              ) : (
+                <span className="line-clamp-2">
+                  {editedVal ?? entry[lang] ?? "-"}
+                </span>
+              )}
+            </div>
+          );
+        },
+      })),
+      {
+        header: "Actions",
+        cell: ({ row }) => {
+          const key = row.original.key;
+          return editedValues.some((v) => v.key === key) ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleSaveRow(key)}
+            >
+              Save Row
+            </Button>
+          ) : null;
+        },
+      },
+    ],
+    [editingCell, editValue, editedValues, fileNames]
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
   return (
-    <div className="overflow-auto">
+    <div>
       <Dialog open={showCommitDialog} onOpenChange={setShowCommitDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Commit Changes</DialogTitle>
             <DialogDescription>
-              Enter a message to describe your changes
+              Enter a message for this commit.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="branch">Branch</Label>
-              <Input
-                id="branch"
+            <div className="flex flex-col gap-2">
+              <Label>Branch</Label>
+              <Select onValueChange={setBranchName}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a branch" />
+                </SelectTrigger>
+                <SelectContent className="w-full">
+                  {allBranches.map((branch) => (
+                    <SelectItem key={branch} value={branch} className="w-full">
+                      {branch}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* <Input
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
-                placeholder="main"
-              />
+              /> */}
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="message">Commit message</Label>
+            <div className="flex flex-col gap-2">
+              <Label>Message</Label>
               <Input
-                id="message"
                 value={commitMessage}
                 onChange={(e) => setCommitMessage(e.target.value)}
-                placeholder="Update translations"
               />
             </div>
           </div>
           <DialogFooter>
-            <button
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-transparent border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
+            <Button
+              variant="outline"
               onClick={() => setShowCommitDialog(false)}
             >
               Cancel
-            </button>
-            <button
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4"
-              onClick={handleCommit}
-            >
-              Commit
-            </button>
+            </Button>
+            <Button onClick={handleCommit}>Commit</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="flex justify-between my-2">
-        <div>
-          {editedValues.length > 0 && (
-            <div className="text-sm text-amber-600">
-              You have {editedValues.length} pending changes
-            </div>
-          )}
-        </div>
+      <div className="flex justify-between items-center my-4">
+        {editedValues.length > 0 && (
+          <div className="text-sm text-amber-600">
+            {editedValues.length} pending change(s)
+          </div>
+        )}
         <div className="flex gap-2">
           {editedValues.length > 0 && (
             <>
-              <Button variant="outline" onClick={clearDrafts}>
+              <Button variant="outline" onClick={() => setEditedValues([])}>
                 Discard Drafts
               </Button>
-              <Button variant="default" onClick={handleSaveAll}>
+              <Button onClick={() => setShowCommitDialog(true)}>
                 Commit Changes
               </Button>
             </>
           )}
         </div>
       </div>
-      <Table className="table-fixed w-full">
-        <TableHeader className="sticky top-0 bg-background z-10">
-          <TableRow>
-            <TableHead className="w-[300px] bg-muted/50 font-semibold">
-              Translation Key
-            </TableHead>
-            {fileNames.map((name) => (
-              <TableHead key={name} className="min-w-[200px] font-semibold">
-                {name.toUpperCase()}
-              </TableHead>
-            ))}
-            <TableHead className="w-[120px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length > 0 ? (
-            data.map((entry) => (
-              <TableRow key={entry.key}>
-                <TableCell className="font-mono text-sm bg-muted/5 truncate">
-                  {entry.key}
-                </TableCell>
-                {fileNames.map((name) => {
-                  const isEditing =
-                    editingCell?.key === entry.key &&
-                    editingCell.language === name;
 
-                  const editedVal = getEditedValue(entry.key, name);
-                  const currentDisplayValue = editedVal ?? entry[name] ?? "";
-
-                  const isEdited = isCellEdited(entry.key, name);
-
-                  return (
-                    <TableCell
-                      key={`${entry.key}-${name}`}
-                      className={cn(
-                        "truncate max-w-[200px] p-0",
-                        isEdited ? "bg-yellow-100" : ""
-                      )}
-                      onClick={() =>
-                        handleCellClick(
-                          entry.key,
-                          name,
-                          editedVal ?? entry[name] ?? ""
-                        )
-                      }
-                    >
-                      <div className="p-2">
-                        {isEditing ? (
-                          <Input
-                            value={editValue}
-                            onChange={(e) => handleEditChange(e.target.value)}
-                            onBlur={commitEdit}
-                            onKeyDown={handleKeyDown}
-                            autoFocus
-                          />
-                        ) : (
-                          <span className="line-clamp-2 cursor-pointer">
-                            {currentDisplayValue || (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="p-2 text-center">
-                  {editedValues.some((v) => v.key === entry.key) && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleSaveRow(entry.key)}
-                    >
-                      Save Row
-                    </Button>
-                  )}
-                </TableCell>
+      <div className="overflow-auto">
+        <Table className="table-fixed w-full">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                  </TableHead>
+                ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={fileNames.length + 2}
-                className="h-24 text-center"
-              >
-                No translations found
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex justify-between items-center mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          Previous
+        </Button>
+        <span className="text-sm">
+          Page {table.getState().pagination.pageIndex + 1} of{" "}
+          {table.getPageCount()}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }

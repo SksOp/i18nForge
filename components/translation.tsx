@@ -246,7 +246,12 @@ export default function TranslationsPage({
 
       {/* Main Table Section */}
       <div className="rounded-lg border bg-card overflow-hidden shadow-sm">
-        <TranslationsTable data={tableData} fileNames={fileNames} />
+        <TranslationsTable
+          data={tableData}
+          fileNames={fileNames}
+          selectedBranch={selectedBranch ?? "main"}
+          allBranches={branchData?.branches ?? []}
+        />
       </div>
     </Layout>
   );
