@@ -166,12 +166,13 @@ export function TranslationsTable({
   const handleCommit = async () => {
     if (!projectId) return;
     try {
-      const transformedContent = [
-        {
-          path: "translations.json",
-          content: JSON.stringify(editedValues),
-        },
-      ];
+      const transformedContent = editedValues.map(v => ({
+        path: v.language,
+        content: JSON.stringify({
+          key: v.key,
+          value: v.newValue
+        })
+      }));
 
       const res = await fetch(
         `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(
