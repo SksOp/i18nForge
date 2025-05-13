@@ -43,7 +43,7 @@ export default function TranslationsPage({
   const tableData = useMemo(() => createTableData(filesState), [filesState]);
   const params = useParams();
   const id = params.id as string;
-  const [_isLoading, setIsLoading] = useState(false);
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false);
   const { data: session } = useSession();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [branchName, setBranchName] = useState("");
@@ -83,11 +83,9 @@ export default function TranslationsPage({
   useEffect(() => {
     if (branchData?.branches.length && !selectedBranch) {
       const defaultBranch = branchData.branches[0];
-      setSelectedBranch(defaultBranch);
       handleBranchChange(defaultBranch);
     }
   }, [branchData]);
-
   const handleBranchChange = async (value: string) => {
     const loadingToast = toast.loading("Checking branch...");
     try {
@@ -120,6 +118,7 @@ export default function TranslationsPage({
           }
         });
       }
+
       setFilesState(dataForTable); // <-- update state
       setSelectedBranch(value);
       toast.success("Branch files loaded successfully", {
@@ -133,32 +132,31 @@ export default function TranslationsPage({
   };
 
   const handleCreateBranch = async () => {
-    setIsLoading(true);
-    const newBranch = await fetch(
-      `/api/project/meta/branch?branch=${branchName}&id=${id}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-accessToken": session?.accessToken || "",
-        },
-      }
-    );
+    setIsCreatingBranch(true);
+    try {
+      const res = await fetch(
+        `/api/project/meta/branch?branch=${branchName}&id=${id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-accessToken": session?.accessToken || "",
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Branch creation failed");
 
-    if (!newBranch.ok) {
-      setIsLoading(false);
-      toast.error("Failed to create branch");
-    } else {
       toast.success("Branch created successfully");
       queryClient.invalidateQueries({
         queryKey: ["branches", userName, repoName],
       });
       setIsDialogOpen(false);
       await handleBranchChange(branchName);
-      setSelectedBranch(branchName);
       setBranchName("");
+    } catch (err) {
+      toast.error("Failed to create branch");
     }
-    setIsLoading(false);
+    setIsCreatingBranch(false);
   };
 
   const handleDialogClose = () => {
@@ -228,9 +226,9 @@ export default function TranslationsPage({
                     </Button>
                     <Button
                       onClick={handleCreateBranch}
-                      disabled={!branchName || _isLoading}
+                      disabled={!branchName || isCreatingBranch}
                     >
-                      {_isLoading ? "Creating..." : "Create"}
+                      {isCreatingBranch ? "Creating..." : "Create"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>

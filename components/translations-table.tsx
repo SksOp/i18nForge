@@ -166,13 +166,25 @@ export function TranslationsTable({
   const handleCommit = async () => {
     if (!projectId) return;
     try {
-      const transformedContent = editedValues.map(v => ({
-        path: v.language,
-        content: JSON.stringify({
-          key: v.key,
-          value: v.newValue
+      const completeFileContents: Record<string, Record<string, string>> = {};
+
+      fileNames.forEach((lang) => {
+        completeFileContents[lang] = {};
+        data.forEach((entry) => {
+          const edited = editedValues.find(
+            (v) => v.key === entry.key && v.language === lang
+          );
+          completeFileContents[lang][entry.key] =
+            edited?.newValue ?? entry[lang] ?? "";
+        });
+      });
+
+      const transformedContent = Object.entries(completeFileContents).map(
+        ([language, content]) => ({
+          path: language,
+          content: JSON.stringify(content),
         })
-      }));
+      );
 
       const res = await fetch(
         `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(
