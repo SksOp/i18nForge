@@ -21,9 +21,6 @@ export class MetaUtils {
                     ${this.queryBuilder(paths)}
                 }
             }`;
-
-        console.log('Executing GraphQL query:', query);
-
         try {
             const data = await this._queryRunner(token, query);
             if (!data) return null;
@@ -47,13 +44,10 @@ export class MetaUtils {
     }
     public static async createBranch(token: string, owner: string, repo: string, branch: string) {
         try {
-            // First get the main branch's OID
             const mainOID = await this.getOID(token, owner, repo, 'main');
             if (!mainOID) {
                 throw new Error('Failed to get main branch OID');
             }
-
-            // Get repository ID first
             const repoQuery = gql`
                 query {
                     repository(owner: "${owner}", name: "${repo}") {
@@ -266,7 +260,6 @@ export class MetaUtils {
         };
     }
     private static async _queryRunner(token: string, query: string): Promise<any> {
-        console.log('query', query);
         try {
             if (!token || !this.GITHUB_API_URL || !query) {
                 throw new Error('Missing required parameters in _queryRunner');
@@ -292,7 +285,6 @@ export class MetaUtils {
         return url;
     }
     private static queryBuilder(paths: string[]): string {
-        console.log(paths);
         const processedPaths = paths.map(path => {
             if (path.includes('github.com')) {
                 const urlParts = path.split('/');
