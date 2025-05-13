@@ -72,13 +72,13 @@ export async function POST(request: Request) {
                     );
                 }
 
+
                 result = (await MetaUtils.commitContent(
                     accessToken,
                     owner,
                     repo,
                     commitBranch,
-                    path,
-                    content,
+                    [{ path, content }],
                     message
                 )) as CommitResponse;
 
