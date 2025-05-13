@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
       projectPath: string;
       language: string;
     }[];
-    console.log("project content for commit: ", content);
     const fileContent: FileContentForCommit[] = content.map(
       (file: { path: string; language: string; content: string }) => {
         const matchedPath = paths.find(
@@ -58,18 +57,15 @@ export async function POST(request: NextRequest) {
             `No matching path found for language: ${file.language}`
           );
         }
-        console.log("matchedPath", matchedPath);
-        console.log("file.content", file.content);
         return {
           path: matchedPath.path.startsWith("/")
             ? matchedPath.path.slice(1)
             : matchedPath.path,
-          content: file.content,
+          content: JSON.stringify(JSON.parse(file.content), null, 2),
           branch: branch,
         };
       }
     );
-    console.log("fileContent", fileContent);
     const result = await MetaAPI.commitContent(
       session.accessToken,
       project.owner,
