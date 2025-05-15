@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import Layout from "@/layout/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { cn } from "@/lib/utils";
 import BranchList from "@/components/branchList";
 import { toast } from "sonner";
@@ -406,11 +406,13 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   );
 }
 
+type Params = Promise<{ installationId: string; owner: string; repo: string }>;
 export default function NewProjectPage({
-  params,
+  params: _params,
 }: {
-  params: { installationId: string; owner: string; repo: string };
+  params: Params;
 }) {
+  const params = use(_params);
   const { data: installation, isLoading } = useQuery(
     installationQuery(params.installationId)
   );

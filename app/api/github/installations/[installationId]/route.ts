@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../../auth/[...nextauth]/route";
+import { authOptions } from "../../../auth/[...nextauth]/auth";
 import prisma from "@/lib/prisma";
-import { mapInstallation } from "../route";
+import { mapInstallation } from "../utils";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { installationId: string } }
-) {
+type Params = Promise<{ installationId: string }>;
+
+export async function GET(request: Request, data: { params: Params }) {
   try {
     const session = await getServerSession(authOptions);
+    const params = await data.params;
 
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

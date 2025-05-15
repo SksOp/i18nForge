@@ -4,24 +4,15 @@ import {
   getUserOrgs,
   getUserSelfInstallation,
 } from "../utils";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "../../auth/[...nextauth]/auth";
 import { getServerSession } from "next-auth";
-import { Installation as DBInstallation } from "@prisma/client";
+import { mapInstallation } from "./utils";
 
 export type Installation = {
   id: string;
   installationId: string;
   type: "Organization" | "User";
   name: string;
-};
-
-export const mapInstallation = (installation: DBInstallation): Installation => {
-  return {
-    id: installation.id,
-    installationId: installation.installationId,
-    type: installation.type as "Organization" | "User",
-    name: installation.githubName,
-  };
 };
 
 export async function GET() {

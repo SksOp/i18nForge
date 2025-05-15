@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
 import { getOrgRepos, getUserRepos } from "../../utils";
 import { type NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
@@ -35,14 +35,11 @@ const mapRepository = (repository: GitHubRepo): Repository => {
     watchers_count: repository.watchers_count,
   };
 };
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { installtionId: string } }
-) {
+type Params = Promise<{ installtionId: string }>;
+export async function GET(request: NextRequest, data: { params: Params }) {
   try {
     const session = await getServerSession(authOptions);
-
+    const params = await data.params;
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
