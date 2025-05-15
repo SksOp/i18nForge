@@ -74,7 +74,10 @@
     "tailwind-merge": "^3.1.0",
     "tw-animate-css": "^1.2.5",
     "vaul": "^1.1.2",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "@langchain/core": "^0.3.42",
+    "@langchain/google-genai": "^0.1.11",
+    "langchain": "^0.3.19"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
