@@ -9,7 +9,8 @@
     "lint": "next lint",
     "generate": "npx prisma generate",
     "migrate": "npx dotenv-cli -e .env.local -- npx prisma migrate dev",
-    "smee": "smee -P /api/github/webhook -u https://smee.io/aRRyvWmKrQEM9zdD -p 3000"
+    "smee": "smee -P /api/github/webhook -u https://smee.io/aRRyvWmKrQEM9zdD -p 3000",
+    "deploy": "npm run generate && npm run build  && npm run migrate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

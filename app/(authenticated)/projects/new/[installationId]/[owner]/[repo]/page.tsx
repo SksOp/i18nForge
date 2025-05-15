@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import Layout from "@/layout/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { cn } from "@/lib/utils";
 import BranchList from "@/components/branchList";
 import { toast } from "sonner";
@@ -317,7 +317,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm max-w-3xl ">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-6">
           Create Project for{" "}
@@ -406,11 +406,13 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   );
 }
 
+type Params = Promise<{ installationId: string; owner: string; repo: string }>;
 export default function NewProjectPage({
-  params,
+  params: _params,
 }: {
-  params: { installationId: string; owner: string; repo: string };
+  params: Params;
 }) {
+  const params = use(_params);
   const { data: installation, isLoading } = useQuery(
     installationQuery(params.installationId)
   );
@@ -436,7 +438,7 @@ export default function NewProjectPage({
   if (!_repoAccess?.hasAccess) {
     return (
       <Layout>
-        <Card className="shadow-sm">
+        <Card className="shadow-sm ">
           <CardContent className="p-6">
             <h1 className="text-2xl font-bold mb-4">
               Repository Access Required
@@ -461,7 +463,7 @@ export default function NewProjectPage({
 
   return (
     <Layout>
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4 flex items-center justify-center  w-full">
         <ProjectForm owner={params.owner} repo={params.repo} />
       </div>
     </Layout>
