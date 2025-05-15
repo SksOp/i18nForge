@@ -71,10 +71,10 @@ export function TranslationsTable({
   const [commitMessage, setCommitMessage] = useState("");
   const [showCommitDialog, setShowCommitDialog] = useState(false);
   const [branchName, setBranchName] = useState(selectedBranch);
-  const [defaultBranch, setDefaultBranch] = useState("");
   const queryClient = useQueryClient();
   const params = useParams();
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [isCommitting, setIsCommitting] = useState(false);
 
   useEffect(() => {
     setProjectId(params.id as string);
@@ -123,16 +123,23 @@ export function TranslationsTable({
   };
 
   const getDefaultBranch = async () => {
-    const res = await fetch(`/api/project/meta/branch/db?id=${projectId}`);
-    const data = await res.json();
-    console.log("data", data);
-    return data.defaultBranch;
+    try {
+      const res = await fetch(`/api/project/meta/branch/db?id=${projectId}`);
+      if (!res.ok) throw new Error('Failed to fetch default branch');
+      const data = await res.json();
+      return data.defaultBranch;
+    } catch (error) {
+      console.error('Error fetching default branch:', error);
+      return selectedBranch;
+    }
   }
 
   useEffect(() => {
-    getDefaultBranch().then((branch) => {
-      setDefaultBranch(branch);
-    });
+    if (projectId) {
+      getDefaultBranch().then((branch) => {
+        setBranchName(branch);
+      });
+    }
   }, [projectId]);
 
   const commitEdit = () => {
@@ -192,6 +199,7 @@ export function TranslationsTable({
         })
       );
 
+      setIsCommitting(true);
       const res = await fetch(
         `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(
           commitMessage
@@ -205,7 +213,7 @@ export function TranslationsTable({
           }),
         }
       );
-
+      setIsCommitting(false);
       if (!res.ok) throw new Error("Failed to commit changes");
 
       queryClient.invalidateQueries({ queryKey: ["fileContent", projectId] });
@@ -215,6 +223,7 @@ export function TranslationsTable({
       setCommitMessage("");
     } catch (err) {
       console.error(err);
+      setIsCommitting(false);
     }
   };
 
@@ -289,24 +298,22 @@ export function TranslationsTable({
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-2">
               <Label>Branch</Label>
-              <Select onValueChange={setBranchName} defaultValue={defaultBranch} disabled>
+              <Select
+                value={branchName}
+                onValueChange={setBranchName}
+                disabled={true}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a branch" />
+                  <SelectValue placeholder="Select branch" />
                 </SelectTrigger>
-                <SelectContent className="w-full">
-                  <SelectItem
-                    key={selectedBranch}
-                    value={selectedBranch}
-                    className="w-full"
-                  >
-                    {selectedBranch}
-                  </SelectItem>
+                <SelectContent>
+                  {allBranches.map((branch) => (
+                    <SelectItem key={branch} value={branch}>
+                      {branch}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {/* <Input
-                value={branchName}
-                onChange={(e) => setBranchName(e.target.value)}
-              /> */}
             </div>
             <div className="flex flex-col gap-2">
               <Label>Message</Label>
@@ -323,7 +330,9 @@ export function TranslationsTable({
             >
               Cancel
             </Button>
-            <Button onClick={handleCommit}>Commit</Button>
+            <Button onClick={handleCommit} disabled={isCommitting}>
+              {isCommitting ? "Committing..." : "Commit"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
