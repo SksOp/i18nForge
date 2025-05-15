@@ -27,47 +27,47 @@ export class GoogleAIService implements LLMService {
 
     async generateResponse(messages: BaseMessage[]): Promise<LLMResponse> {
         return this.retryHandler.executeWithRetry(async () => {
-            console.log('Calling Google AI API');
+            // console.log('Calling Google AI API');
 
             const promptValue = { toChatMessages: () => messages } as BasePromptValueInterface;
             const response = await this.model.generatePrompt([promptValue]);
             const firstGeneration = response.generations[0][0];
 
-            console.log('Google AI API call successful', {
-                model: this.model.modelName,
+            // console.log('Google AI API call successful', {
+            model: this.model.modelName,
             });
 
-            return {
-                content: firstGeneration.text,
-                model: this.model.modelName,
-                usage: response.llmOutput?.tokenUsage ? {
-                    promptTokens: response.llmOutput.tokenUsage.promptTokens,
-                    completionTokens: response.llmOutput.tokenUsage.completionTokens,
-                    totalTokens: response.llmOutput.tokenUsage.totalTokens
-                } : undefined
-            };
-        });
-    }
+        return {
+            content: firstGeneration.text,
+            model: this.model.modelName,
+            usage: response.llmOutput?.tokenUsage ? {
+                promptTokens: response.llmOutput.tokenUsage.promptTokens,
+                completionTokens: response.llmOutput.tokenUsage.completionTokens,
+                totalTokens: response.llmOutput.tokenUsage.totalTokens
+            } : undefined
+        };
+    });
+}
 
     async generateResponseFromTemplate(
-        template: ChatPromptTemplate,
-        variables: Record<string, any>
-    ): Promise<LLMResponse> {
-        const chain = template.pipe(this.model);
+    template: ChatPromptTemplate,
+    variables: Record<string, any>
+): Promise < LLMResponse > {
+    const chain = template.pipe(this.model);
 
-        return this.retryHandler.executeWithRetry(async () => {
-            console.log('Calling Google AI API with template');
+    return this.retryHandler.executeWithRetry(async () => {
+        // console.log('Calling Google AI API with template');
 
-            const response = await chain.invoke(variables);
+        const response = await chain.invoke(variables);
 
-            console.log('Google AI template call successful', {
-                model: this.model.modelName,
+        // console.log('Google AI template call successful', {
+        model: this.model.modelName,
             });
 
-            return {
-                content: response.content as string,
-                model: this.model.modelName
-            };
-        });
+    return {
+        content: response.content as string,
+        model: this.model.modelName
+    };
+});
     }
 }

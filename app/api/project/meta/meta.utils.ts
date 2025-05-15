@@ -1,3 +1,4 @@
+import prisma from '@/lib/prisma';
 import { gql, request } from 'graphql-request';
 
 
@@ -187,7 +188,13 @@ export class MetaUtils {
     }
     public static async getRepositoryBranches(token: string, owner: string, repo: string) {
         const data = await this.fetchRepositoryBranches(token, owner, repo);
-        return this.parseRepositoryBranches(data);
+        const project = await prisma.project.findFirst({
+            where: {
+                repoName: repo,
+                owner: owner,
+            },
+        });
+        return this.parseRepositoryBranches(data, project?.defaultBranch || '');
     }
     public static async getRepositoryTree(token: string, owner: string, repo: string, branch: string, path = '') {
         const data = await this.fetchRepositoryTree(token, owner, repo, branch, path);
@@ -250,9 +257,9 @@ export class MetaUtils {
             return null;
         }
     }
-    private static async parseRepositoryBranches(data: any) {
+    private static async parseRepositoryBranches(data: any, _defaultBranch: string) {
         if (!data) return null;
-        const defaultBranch = data.repository.defaultBranchRef.name;
+        const defaultBranch = _defaultBranch != '' ? _defaultBranch : data.repository.defaultBranchRef.name;
         const branches = data.repository.refs.nodes.map((node: any) => node.name);
         return {
             defaultBranch,

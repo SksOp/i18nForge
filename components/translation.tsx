@@ -88,6 +88,7 @@ export default function TranslationsPage({
   }, [branchData]);
   const handleBranchChange = async (value: string) => {
     const loadingToast = toast.loading("Checking branch...");
+    if (!id) return;
     try {
       const response = await fetch(
         `/api/project/meta/file?id=${id}&branch=${value}`,
@@ -102,7 +103,6 @@ export default function TranslationsPage({
       if (!response.ok) throw new Error("Failed to fetch branch files");
 
       const fileContent = await response.json();
-      console.log("branchFiles", fileContent);
       const dataForTable: Record<string, any> = {};
       if (fileContent?.fileContent) {
         fileNames.forEach((path, index) => {
@@ -111,10 +111,20 @@ export default function TranslationsPage({
             if (typeof content === "object") {
               dataForTable[path] = content;
             } else if (typeof content === "string") {
-              dataForTable[path] = JSON.parse(content);
+              try {
+                dataForTable[path] = JSON.parse(content);
+              } catch (error) {
+                console.error(`Error parsing content for ${path}:`, error);
+                toast.error(`Error parsing content for ${path}:`, {
+                  id: loadingToast,
+                });
+              }
             }
           } catch (error) {
             console.error(`Error parsing content for ${path}:`, error);
+            toast.error(`Error parsing content for ${path}:`, {
+              id: loadingToast,
+            });
           }
         });
       }

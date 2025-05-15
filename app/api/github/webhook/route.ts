@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     const payload_text = await req.text();
     const payload = JSON.parse(payload_text);
-    console.log("githubEvent", githubEvent);
+    // console.log("githubEvent", githubEvent);
 
     // Forward event to smee.io
 
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         break;
       case "pull_request":
         // Handle pull request event
-        console.log("Received pull request event");
+        // console.log("Received pull request event");
         break;
     }
 

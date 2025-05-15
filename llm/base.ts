@@ -76,7 +76,7 @@ export class RetryHandler {
 
         for (let attempt = 1; attempt <= this.config.maxAttempts; attempt++) {
             try {
-                console.log(`Attempt ${attempt} of ${this.config.maxAttempts}`);
+                // console.log(`Attempt ${attempt} of ${this.config.maxAttempts}`);
                 return await operation();
             } catch (error: any) {
                 lastError = error;
@@ -92,7 +92,7 @@ export class RetryHandler {
                 }
 
                 const delayMs = this.calculateDelay(attempt);
-                console.log(`Retrying in ${delayMs}ms`);
+                // console.log(`Retrying in ${delayMs}ms`);
                 await this.delay(delayMs);
             }
         }

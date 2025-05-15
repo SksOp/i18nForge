@@ -22,9 +22,10 @@ interface BranchListProps {
   userName: string;
   onSelect: (branch: string) => void;
 }
-
+//{"defaultBranch":"test","branches":["main","test"]}
 export interface BranchData {
   branches: string[];
+  defaultBranch: string;
 }
 
 export default function BranchList({
@@ -35,7 +36,7 @@ export default function BranchList({
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const { data: session, status } = useSession();
-
+  const [defaultBranch, setDefaultBranch] = useState("");
   if (!userName || !repoName) {
     return null;
   }
@@ -53,10 +54,27 @@ export default function BranchList({
           },
         }
       );
-      return response.json() as Promise<BranchData>;
+      const data = await response.json() as Promise<BranchData>;
+      setDefaultBranch((await data).defaultBranch);
+      // console.log("defaultBranch is ", defaultBranch);
+      return data;
     },
     enabled: !!userName && !!repoName,
   });
+
+  const getDefaultBranch = async () => {
+    const res = await fetch(`/api/project/meta/branch/db?repo=${repoName}&userName=${userName}`);
+    const data = await res.json();
+    return data.defaultBranch;
+  }
+
+
+  useEffect(() => {
+    getDefaultBranch().then((branch) => {
+      setDefaultBranch(branch);
+    });
+  }, [repoName, userName]);
+
 
   if (isLoading) {
     return (
@@ -65,17 +83,16 @@ export default function BranchList({
       </div>
     );
   }
-  console.log("branchData", branchData);
+
   const branches = branchData?.branches ?? [];
   const filteredBranches = debouncedSearch
     ? branches.filter((branch) =>
-        branch.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
+      branch.toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
     : branches;
-
   return (
     <div className="w-full  ">
-      <Select onValueChange={onSelect}>
+      <Select onValueChange={onSelect} defaultValue={defaultBranch}>
         <SelectTrigger className=" h-10 px-3 py-2 border rounded-md flex items-center justify-between">
           <SelectValue placeholder="Select a branch" />
         </SelectTrigger>
@@ -94,6 +111,7 @@ export default function BranchList({
               <SelectItem
                 key={branch}
                 value={branch}
+                defaultValue={defaultBranch}
                 className="font-mono px-2 py-1.5 rounded-sm  cursor-pointer"
               >
                 {branch}

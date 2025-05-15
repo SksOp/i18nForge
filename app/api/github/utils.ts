@@ -42,7 +42,7 @@ export const getAllOrgInstallations = async (
 };
 
 export const getUserSelfInstallation = async (githubId: string) => {
-  console.log("githubId", githubId);
+  // console.log("githubId", githubId);
   const installation = await prisma.installation.findUnique({
     where: {
       githubId,

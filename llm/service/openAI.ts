@@ -28,46 +28,46 @@ export class OpenAIService implements LLMService {
 
     async generateResponse(messages: BaseMessage[]): Promise<LLMResponse> {
         return this.retryHandler.executeWithRetry(async () => {
-            console.log('Calling OpenAI API');
+            // console.log('Calling OpenAI API');
 
             const promptValue = { toChatMessages: () => messages } as BasePromptValueInterface;
             const response = await this.model.generatePrompt([promptValue]);
             const firstGeneration = response.generations[0][0];
 
-            console.log('OpenAI API call successful', {
-                model: this.model.modelName,
+            // console.log('OpenAI API call successful', {
+            model: this.model.modelName,
             });
 
-            return {
-                content: firstGeneration.text,
-                model: this.model.modelName,
-                usage: response.llmOutput?.tokenUsage ? {
-                    promptTokens: response.llmOutput.tokenUsage.promptTokens,
-                    completionTokens: response.llmOutput.tokenUsage.completionTokens,
-                    totalTokens: response.llmOutput.tokenUsage.totalTokens
-                } : undefined
-            };
-        });
-    }
+        return {
+            content: firstGeneration.text,
+            model: this.model.modelName,
+            usage: response.llmOutput?.tokenUsage ? {
+                promptTokens: response.llmOutput.tokenUsage.promptTokens,
+                completionTokens: response.llmOutput.tokenUsage.completionTokens,
+                totalTokens: response.llmOutput.tokenUsage.totalTokens
+            } : undefined
+        };
+    });
+}
 
     async generateResponseFromTemplate(
-        template: ChatPromptTemplate,
-        variables: Record<string, any>
-    ): Promise<LLMResponse> {
-        const chain = template.pipe(this.model);
+    template: ChatPromptTemplate,
+    variables: Record<string, any>
+): Promise < LLMResponse > {
+    const chain = template.pipe(this.model);
 
-        return this.retryHandler.executeWithRetry(async () => {
-            console.log('Calling OpenAI API with template');
+    return this.retryHandler.executeWithRetry(async () => {
+        // console.log('Calling OpenAI API with template');
 
-            const response = await chain.invoke(variables);
+        const response = await chain.invoke(variables);
 
-            console.log('OpenAI API template call successful', {
-                model: this.model.modelName,
+        // console.log('OpenAI API template call successful', {
+        model: this.model.modelName,
             });
-            return {
-                content: JSON.stringify(response.content),
-                model: this.model.modelName
-            };
-        });
+    return {
+        content: JSON.stringify(response.content),
+        model: this.model.modelName
+    };
+});
     }
 }

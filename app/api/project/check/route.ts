@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
         const { name } = body;
-        console.log("name", name);
+        // console.log("name", name);
         if (!name) {
             return NextResponse.json(
                 { error: "Missing required fields" },

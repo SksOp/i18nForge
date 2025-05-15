@@ -122,6 +122,19 @@ export function TranslationsTable({
     setEditValue(currentValue);
   };
 
+  const handleBranchChange = (value: string) => {
+    if (!projectId) return;
+    fetch(`/api/project/meta/branch?id=${projectId}&branch=${value}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+  }
+  useEffect(() => {
+    handleBranchChange(selectedBranch);
+  }, [selectedBranch]);
+
   const commitEdit = () => {
     if (editingCell) {
       const originalValue =
@@ -154,13 +167,6 @@ export function TranslationsTable({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") commitEdit();
     else if (e.key === "Escape") setEditingCell(null);
-  };
-
-  const handleSaveRow = (key: string) => {
-    const rowEdits = editedValues.filter((v) => v.key === key);
-    rowEdits.forEach((v) => {
-      onTranslationUpdate?.(v.key, v.language, v.newValue);
-    });
   };
 
   const handleCommit = async () => {
@@ -259,21 +265,6 @@ export function TranslationsTable({
           );
         },
       })),
-      {
-        header: "Actions",
-        cell: ({ row }) => {
-          const key = row.original.key;
-          return editedValues.some((v) => v.key === key) ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => handleSaveRow(key)}
-            >
-              Save Row
-            </Button>
-          ) : null;
-        },
-      },
     ],
     [editingCell, editValue, editedValues, fileNames]
   );
@@ -298,16 +289,18 @@ export function TranslationsTable({
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-2">
               <Label>Branch</Label>
-              <Select onValueChange={setBranchName}>
+              <Select onValueChange={setBranchName} defaultValue={selectedBranch} disabled>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a branch" />
                 </SelectTrigger>
                 <SelectContent className="w-full">
-                  {allBranches.map((branch) => (
-                    <SelectItem key={branch} value={branch} className="w-full">
-                      {branch}
-                    </SelectItem>
-                  ))}
+                  <SelectItem
+                    key={selectedBranch}
+                    value={selectedBranch}
+                    className="w-full"
+                  >
+                    {selectedBranch}
+                  </SelectItem>
                 </SelectContent>
               </Select>
               {/* <Input

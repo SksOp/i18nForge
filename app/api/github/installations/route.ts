@@ -18,14 +18,14 @@ export type Installation = {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    console.log(session);
+    // console.log(session);
 
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const orgs = await getUserOrgs(session.accessToken);
-    console.log(session);
+    // console.log(session);
     const installations = await getAllOrgInstallations(orgs);
     const userInstallation = await getUserSelfInstallation(session.githubId);
 

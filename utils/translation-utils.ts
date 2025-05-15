@@ -35,8 +35,8 @@ export function getAllKeys(files: TranslationFiles): string[] {
 export function createTableData(files: TranslationFiles): TranslationEntry[] {
   const allKeys = getAllKeys(files);
   const fileNames = Object.keys(files);
-  console.log("all", allKeys);
-  console.log("files", fileNames);
+  // console.log("all", allKeys);
+  // console.log("files", fileNames);
   return allKeys.map((key) => {
     const entry: TranslationEntry = { key };
 

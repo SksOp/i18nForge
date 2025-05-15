@@ -18,7 +18,7 @@ export interface InstallationPayload {
 }
 
 export const installation = async (payload: InstallationPayload) => {
-  console.log("action", payload.action);
+  // console.log("action", payload.action);
   if (payload.action === "created") {
     await handleActionCreated(payload);
   } else if (payload.action === "deleted") {
