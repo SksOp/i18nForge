@@ -317,7 +317,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm max-w-3xl ">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-6">
           Create Project for{" "}
@@ -436,7 +436,7 @@ export default function NewProjectPage({
   if (!_repoAccess?.hasAccess) {
     return (
       <Layout>
-        <Card className="shadow-sm">
+        <Card className="shadow-sm ">
           <CardContent className="p-6">
             <h1 className="text-2xl font-bold mb-4">
               Repository Access Required
@@ -461,7 +461,7 @@ export default function NewProjectPage({
 
   return (
     <Layout>
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4 flex items-center justify-center  w-full">
         <ProjectForm owner={params.owner} repo={params.repo} />
       </div>
     </Layout>

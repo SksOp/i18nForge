@@ -180,6 +180,9 @@ const RepoList = ({ installation }: { installation: Installation }) => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
+  const [importedProjectIds, setImportedProjectIds] = useState<
+    Record<number, string | null>
+  >({});
 
   const { data: repositories, isLoading } = useQuery(
     installationRepositoriesQuery(installation.installationId, {
@@ -189,9 +192,23 @@ const RepoList = ({ installation }: { installation: Installation }) => {
     })
   );
 
-  const handleLoadMore = () => {
-    setPage((prev) => prev + 1);
-  };
+  useEffect(() => {
+    const checkAllProjects = async () => {
+      if (!repositories) return;
+
+      const results = await Promise.all(
+        repositories.map((repo) => checkForExistingProject(repo, installation))
+      );
+
+      const newStatus: Record<number, string | null> = {};
+      results.forEach((result, i) => {
+        newStatus[repositories[i].id] = result?.projectId ?? null;
+      });
+      setImportedProjectIds((prev) => ({ ...prev, ...newStatus }));
+    };
+
+    checkAllProjects();
+  }, [repositories]);
 
   const checkForExistingProject = async (
     repo: Repository,
@@ -206,48 +223,59 @@ const RepoList = ({ installation }: { installation: Installation }) => {
         name: `${installation?.name}/${repo.name}`,
       }),
     });
-    const data = await res.json();
-    return data;
+    return await res.json();
+  };
+
+  const handleLoadMore = () => {
+    setPage((prev) => prev + 1);
   };
 
   return (
     <div className="border rounded-md divide-y">
       {repositories && repositories.length > 0 ? (
         <>
-          {repositories.map((repo: Repository) => (
-            <div
-              key={repo.id}
-              className="p-4 flex items-center justify-between hover:bg-muted/50"
-            >
-              <div className="flex gap-2 items-center">
-                <span className="font-medium">{repo.name}</span>
-                {repo.private && <Lock className="w-4 h-4" />}
-              </div>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  const loadingToast = toast.loading(
-                    "Checking project status..."
-                  );
-                  const result = await checkForExistingProject(
-                    repo,
-                    installation
-                  );
-                  toast.dismiss(loadingToast);
+          {repositories.map((repo: Repository) => {
+            const alreadyImported = importedProjectIds[repo.id];
 
-                  if (result?.projectId) {
-                    router.push(`/projects/${result.projectId}`);
-                  } else {
-                    router.push(
-                      `/projects/new/${installation.installationId}/${repo.full_name}`
-                    );
-                  }
-                }}
+            return (
+              <div
+                key={repo.id}
+                className="p-4 flex items-center justify-between hover:bg-muted/50"
               >
-                Import
-              </Button>
-            </div>
-          ))}
+                <div className="flex gap-2 items-center">
+                  <span className="font-medium">{repo.name}</span>
+                  {repo.private && <Lock className="w-4 h-4" />}
+                </div>
+                <Button
+                  size="sm"
+                  disabled={!!alreadyImported}
+                  variant={alreadyImported ? "outline" : "default"}
+                  onClick={async () => {
+                    if (alreadyImported) return;
+
+                    const loadingToast = toast.loading(
+                      "Checking project status..."
+                    );
+                    const result = await checkForExistingProject(
+                      repo,
+                      installation
+                    );
+                    toast.dismiss(loadingToast);
+
+                    if (result?.projectId) {
+                      router.push(`/projects/${result.projectId}`);
+                    } else {
+                      router.push(
+                        `/projects/new/${installation.installationId}/${repo.full_name}`
+                      );
+                    }
+                  }}
+                >
+                  {alreadyImported ? "Imported" : "Import"}
+                </Button>
+              </div>
+            );
+          })}
           {repositories.length === 10 && (
             <div className="p-4 text-center">
               <Button variant="outline" onClick={handleLoadMore}>
