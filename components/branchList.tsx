@@ -37,44 +37,40 @@ export default function BranchList({
   const debouncedSearch = useDebounce(search, 300);
   const { data: session, status } = useSession();
   const [defaultBranch, setDefaultBranch] = useState("");
+
   if (!userName || !repoName) {
     return null;
   }
 
-  const { data: branchData, isLoading } = useQuery({
-    queryKey: ["branches", userName, repoName],
+  const { data: branchData, isLoading } = useQuery<BranchData>({
+    queryKey: ["branches", userName, repoName, session?.accessToken],
     queryFn: async () => {
+      if (!session?.accessToken) {
+        throw new Error("Access token is not available.");
+      }
       const response = await fetch(
         `/api/project/meta/branch?repo=${repoName}&userName=${userName}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "x-user-accessToken": session?.accessToken || "",
+            "x-user-accessToken": session.accessToken,
           },
         }
       );
-      const data = await response.json() as Promise<BranchData>;
-      setDefaultBranch((await data).defaultBranch);
-      // console.log("defaultBranch is ", defaultBranch);
-      return data;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch branches: ${response.statusText}`);
+      }
+      return response.json();
     },
-    enabled: !!userName && !!repoName,
+    enabled: !!userName && !!repoName && !!session?.accessToken,
   });
 
-  const getDefaultBranch = async () => {
-    const res = await fetch(`/api/project/meta/branch/db?repo=${repoName}&userName=${userName}`);
-    const data = await res.json();
-    return data.defaultBranch;
-  }
-
-
   useEffect(() => {
-    getDefaultBranch().then((branch) => {
-      setDefaultBranch(branch);
-    });
-  }, [repoName, userName]);
-
+    if (branchData?.defaultBranch) {
+      setDefaultBranch(branchData.defaultBranch);
+    }
+  }, [branchData]);
 
   if (isLoading) {
     return (
@@ -111,7 +107,6 @@ export default function BranchList({
               <SelectItem
                 key={branch}
                 value={branch}
-                defaultValue={defaultBranch}
                 className="font-mono px-2 py-1.5 rounded-sm  cursor-pointer"
               >
                 {branch}

@@ -90,16 +90,24 @@ export default function TranslationsPage({
     const loadingToast = toast.loading("Checking branch...");
     if (!id) return;
     try {
-      const response = await fetch(
-        `/api/project/meta/file?id=${id}&branch=${value}`,
-        {
+      const [fileResponse, branchResponse] = await Promise.all([
+        fetch(`/api/project/meta/file?id=${id}&branch=${value}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             "x-user-accessToken": session?.accessToken || "",
           },
-        }
-      );
+        }),
+        fetch(`/api/project/meta/branch?id=${id}&branch=${value}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-accessToken": session?.accessToken || "",
+          },
+        })
+      ]);
+
+      const response = fileResponse;
       if (!response.ok) throw new Error("Failed to fetch branch files");
 
       const fileContent = await response.json();
@@ -251,13 +259,11 @@ export default function TranslationsPage({
           </Button>
         </div>
       </div>
-
-      {/* Main Table Section */}
       <div className="rounded-lg border bg-card overflow-hidden shadow-sm">
         <TranslationsTable
           data={tableData}
           fileNames={fileNames}
-          selectedBranch={selectedBranch ?? "main"}
+          selectedBranch={selectedBranch || ""}
           allBranches={branchData?.branches ?? []}
         />
       </div>

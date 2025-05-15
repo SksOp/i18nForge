@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TranslationEntry } from "@/types/translations";
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -71,7 +71,7 @@ export function TranslationsTable({
   const [commitMessage, setCommitMessage] = useState("");
   const [showCommitDialog, setShowCommitDialog] = useState(false);
   const [branchName, setBranchName] = useState(selectedBranch);
-
+  const [defaultBranch, setDefaultBranch] = useState("");
   const queryClient = useQueryClient();
   const params = useParams();
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -122,18 +122,18 @@ export function TranslationsTable({
     setEditValue(currentValue);
   };
 
-  const handleBranchChange = (value: string) => {
-    if (!projectId) return;
-    fetch(`/api/project/meta/branch?id=${projectId}&branch=${value}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
+  const getDefaultBranch = async () => {
+    const res = await fetch(`/api/project/meta/branch/db?id=${projectId}`);
+    const data = await res.json();
+    console.log("data", data);
+    return data.defaultBranch;
   }
+
   useEffect(() => {
-    handleBranchChange(selectedBranch);
-  }, [selectedBranch]);
+    getDefaultBranch().then((branch) => {
+      setDefaultBranch(branch);
+    });
+  }, [projectId]);
 
   const commitEdit = () => {
     if (editingCell) {
@@ -289,7 +289,7 @@ export function TranslationsTable({
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-2">
               <Label>Branch</Label>
-              <Select onValueChange={setBranchName} defaultValue={selectedBranch} disabled>
+              <Select onValueChange={setBranchName} defaultValue={defaultBranch} disabled>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a branch" />
                 </SelectTrigger>

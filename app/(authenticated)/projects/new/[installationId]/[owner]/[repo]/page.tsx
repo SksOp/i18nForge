@@ -301,7 +301,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
         owner: owner,
         ownerType: "user",
         paths: data.langFiles,
-        branch: branch ?? "main",
+        branch: branch ?? defaultBranch ?? "",
         repoName: repo,
       });
       if (createProjectMutation.isSuccess) {
@@ -360,7 +360,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
                       onChange={field.onChange}
                       owner={owner}
                       repo={repo}
-                      branch={branch ?? "main"}
+                      branch={branch ?? defaultBranch ?? ""}
                       error={fieldState.error?.message}
                     />
                   )}
