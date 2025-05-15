@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MetaAPI } from "../meta.expose";
 import prisma from "@/lib/prisma";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
 import { FileContentForCommit } from "../meta.utils";
+import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);

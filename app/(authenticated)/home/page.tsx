@@ -50,6 +50,7 @@ export default function HomePage() {
               <div
                 key={project.id}
                 className="p-6 rounded-lg border hover:border-primary transition-colors"
+                onClick={() => router.push(`/projects/${project.id}`)}
               >
                 <Link
                   href={githubRepoUrl}
