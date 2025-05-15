@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 
 import Layout from "@/layout/layout";
 import { projectsQuery } from "@/state/query/project";
@@ -7,10 +7,18 @@ import { useRouter } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Github, User } from "lucide-react";
+import { format } from "date-fns";
 
 export default function HomePage() {
   const { data: projects } = useSuspenseQuery(projectsQuery());
   const router = useRouter();
+
+  useEffect(() => {
+    if (!projects) {
+      router.push("/new");
+    }
+  }, []);
 
   return (
     <Layout className="container mx-auto mt-8 px-4">
@@ -30,16 +38,43 @@ export default function HomePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <Link
-              href={`/projects/${project.id}`}
-              key={project.id}
-              className="block p-6 rounded-lg border hover:border-primary transition-colors"
-            >
-              <h2 className="font-semibold mb-2">{project.name}</h2>
-              <p className="text-sm text-muted-foreground">{project.owner}</p>
-            </Link>
-          ))}
+          {projects.map((project) => {
+            const githubRepoUrl = `https://github.com/${project.name}`;
+            const githubProfileUrl = `https://github.com/${project.owner}`;
+            const createdAtFormatted = format(
+              new Date(project.createdAt),
+              "PPP"
+            );
+
+            return (
+              <div
+                key={project.id}
+                className="p-6 rounded-lg border hover:border-primary transition-colors"
+              >
+                <Link
+                  href={githubRepoUrl}
+                  target="_blank"
+                  className="flex items-center space-x-2 text-lg font-semibold hover:underline w-fit"
+                >
+                  <Github size={18} />
+                  <span>{project.name}</span>
+                </Link>
+
+                <Link
+                  href={githubProfileUrl}
+                  target="_blank"
+                  className="mt-2 flex items-center space-x-2 text-sm text-muted-foreground hover:underline w-fit"
+                >
+                  <User size={16} />
+                  <span>{project.owner}</span>
+                </Link>
+
+                <p className="text-xs text-muted-foreground mt-2">
+                  Created on: {createdAtFormatted}
+                </p>
+              </div>
+            );
+          })}
         </div>
       )}
     </Layout>

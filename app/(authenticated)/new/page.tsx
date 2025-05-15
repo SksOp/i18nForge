@@ -175,7 +175,7 @@ export default function HomePage() {
   );
 }
 
-export const RepoList = ({ installation }: { installation: Installation }) => {
+const RepoList = ({ installation }: { installation: Installation }) => {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
