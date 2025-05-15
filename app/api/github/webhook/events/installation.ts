@@ -17,12 +17,12 @@ export interface InstallationPayload {
   };
 }
 
-export const installation = (payload: InstallationPayload) => {
+export const installation = async (payload: InstallationPayload) => {
   console.log("action", payload.action);
   if (payload.action === "created") {
-    handleActionCreated(payload);
+    await handleActionCreated(payload);
   } else if (payload.action === "deleted") {
-    handleActionDeleted(payload);
+    await handleActionDeleted(payload);
   }
 };
 

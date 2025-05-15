@@ -13,11 +13,10 @@ export async function POST(req: Request) {
 
     // Forward event to smee.io
 
-
     // Handle different webhook events
     switch (githubEvent) {
       case "installation":
-        installation(payload as unknown as InstallationPayload);
+        await installation(payload as unknown as InstallationPayload);
         break;
       case "pull_request":
         // Handle pull request event
