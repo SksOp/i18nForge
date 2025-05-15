@@ -35,6 +35,7 @@ export default function ProjectPage() {
   const dataForTable = {};
   if (fileContent?.fileContent) {
     project?.paths.forEach((path, index) => {
+      // @ts-ignore
       dataForTable[path.language] = JSON.parse(fileContent?.fileContent[index]);
     });
   }
