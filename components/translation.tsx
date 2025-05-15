@@ -82,7 +82,7 @@ export default function TranslationsPage({
 
   useEffect(() => {
     if (branchData?.branches.length && !selectedBranch) {
-      const defaultBranch = branchData.branches[0];
+      const defaultBranch = branchData.defaultBranch;
       handleBranchChange(defaultBranch);
     }
   }, [branchData]);
