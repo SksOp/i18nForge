@@ -39,6 +39,8 @@ import {
   SelectContent,
   SelectItem,
 } from "./ui/select";
+import { Loader2, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface TranslationsTableProps {
   data: TranslationEntry[];
@@ -75,7 +77,7 @@ export function TranslationsTable({
   const params = useParams();
   const [projectId, setProjectId] = useState<string | null>(null);
   const [isCommitting, setIsCommitting] = useState(false);
-
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
   useEffect(() => {
     setProjectId(params.id as string);
   }, [params.id]);
@@ -227,6 +229,46 @@ export function TranslationsTable({
     }
   };
 
+  const handleAI = async (key: string, value: Record<string, string>, language: string) => {
+    try {
+      setIsAIProcessing(true);
+      const res = await fetch(`/api/ai/translation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value, language }),
+      });
+      const data = await res.json();
+
+      if (data.result) {
+        setEditedValues((prev) => {
+          const existingIndex = prev.findIndex(
+            (v) => v.key === key && v.language === language
+          );
+          const updated: EditedValue = {
+            key,
+            language,
+            newValue: data.result.content,
+            originalValue: value[language] || "",
+          };
+
+          if (existingIndex >= 0) {
+            const next = [...prev];
+            next[existingIndex] = updated;
+            toast.success("AI translation completed");
+            return next;
+          }
+          toast.success("AI translation completed");
+          return [...prev, updated];
+        });
+      }
+    } catch (error) {
+      console.error("AI translation failed:", error);
+      toast.error("AI translation failed");
+    } finally {
+      setIsAIProcessing(false);
+    }
+  };
+
   const columns = useMemo<ColumnDef<TranslationEntry>[]>(
     () => [
       {
@@ -246,36 +288,66 @@ export function TranslationsTable({
           const isEditing =
             editingCell?.key === key && editingCell?.language === lang;
           const isEdited = isCellEdited(key, lang);
+          const isProcessing = isAIProcessing && editingCell?.key === key && editingCell?.language === lang;
 
           return (
-            <div
-              className={cn(
-                "p-2 truncate cursor-pointer",
-                isEdited ? "bg-yellow-100" : ""
-              )}
-              onClick={() =>
-                handleCellClick(key, lang, editedVal ?? entry[lang] ?? "")
-              }
-            >
-              {isEditing ? (
-                <Input
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  onBlur={commitEdit}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                />
-              ) : (
-                <span className="line-clamp-2">
-                  {editedVal ?? entry[lang] ?? "-"}
-                </span>
-              )}
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "p-2 truncate cursor-pointer flex-1",
+                  isEdited ? "bg-yellow-100" : "",
+                  isProcessing ? "opacity-50" : ""
+                )}
+                onClick={() =>
+                  handleCellClick(key, lang, editedVal ?? entry[lang] ?? "")
+                }
+              >
+                {isEditing ? (
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                  />
+                ) : (
+                  <span className="line-clamp-2">
+                    {editedVal ?? entry[lang] ?? "-"}
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isAIProcessing}
+                className={cn(
+                  "h-8 w-8",
+                  isProcessing ? "bg-blue-50" : "",
+                  isAIProcessing ? "cursor-not-allowed" : ""
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const translations: Record<string, string> = {};
+                  fileNames.forEach((l) => {
+                    const editedVal = getEditedValue(key, l);
+                    translations[l] = editedVal ?? entry[l] ?? "";
+                  });
+                  handleAI(key, translations, lang);
+                }}
+                title={isAIProcessing ? "AI Translation in progress..." : "AI Translate"}
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                ) : (
+                  <Wand2 className={cn("h-4 w-4", isAIProcessing ? "opacity-50" : "")} />
+                )}
+              </Button>
             </div>
           );
         },
       })),
     ],
-    [editingCell, editValue, editedValues, fileNames]
+    [editingCell, editValue, editedValues, fileNames, isAIProcessing]
   );
 
   const table = useReactTable({
