@@ -39,7 +39,7 @@ import {
   SelectContent,
   SelectItem,
 } from "./ui/select";
-import { Loader2, Wand2 } from "lucide-react";
+import { Loader2, Search, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { unflattenTranslations } from "@/utils/translation-utils";
 
@@ -81,6 +81,8 @@ export function TranslationsTable({
   const [projectId, setProjectId] = useState<string | null>(null);
   const [isCommitting, setIsCommitting] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [globalFilter, setGlobalFilter] = useState("");
+
   useEffect(() => {
     setProjectId(params.id as string);
   }, [params.id]);
@@ -105,6 +107,27 @@ export function TranslationsTable({
       );
     }
   }, [editedValues, projectId]);
+
+  const filteredData = useMemo(() => {
+    if (!globalFilter.trim()) return data;
+
+    const lowerQuery = globalFilter.toLowerCase();
+
+    return data.filter((entry) => {
+      // Check key column
+      if (entry.key.toLowerCase().includes(lowerQuery)) return true;
+
+      // Check all language columns
+      for (const lang of fileNames) {
+        const val = entry[lang];
+        if (val && val.toLowerCase().includes(lowerQuery)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [data, globalFilter, fileNames]);
 
   const isCellEdited = (key: string, language: string) =>
     editedValues.some(
@@ -391,7 +414,7 @@ export function TranslationsTable({
   );
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -449,7 +472,28 @@ export function TranslationsTable({
         </DialogContent>
       </Dialog>
 
-      <div className="flex justify-between items-center my-4">
+      <div className="flex items-center justify-end gap-2  p-2">
+        <div className="relative ">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-8 pr-8"
+          />
+          {globalFilter && (
+            <Button
+              variant="ghost"
+              onClick={() => setGlobalFilter("")}
+              className="absolute right-1 top-1 h-7 w-7 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center">
         {editedValues.length > 0 && (
           <div className="text-sm text-amber-600">
             {editedValues.length} pending change(s)
