@@ -15,7 +15,7 @@ model User {
   id             String    @id @default(uuid())
   name           String?
   username       String    @unique @db.VarChar(255)
-  email          String?   @default("")
+  email          String    @db.VarChar(255)
   image          String?
   accessToken    String?
   githubId       String    @unique @db.VarChar(255)
@@ -26,7 +26,8 @@ model User {
 
   projects              Project[]
   SharedProjectRelation SharedProjectRelation[]
-
+  ContributorToProject  ContributorToProject[]
+  UserEmails            UserEmail[]
   @@map("users")
 }
 
@@ -57,7 +58,7 @@ model Project {
 
   user                  User                    @relation(fields: [userId], references: [id])
   SharedProjectRelation SharedProjectRelation[]
-
+  ContributorToProject  ContributorToProject[]
   @@map("projects")
 }
 
@@ -69,4 +70,33 @@ model SharedProjectRelation {
   user      User    @relation(fields: [userId], references: [id])
 
   @@map("shared_project_relations")
+}
+
+
+model ContributorToProject {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  email     String?
+  colabLink String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  status    String   @default("pending") // pending, active, expired
+
+  @@map("contributor_to_project")
+}
+
+model UserEmail {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(255)
+  isPrimary Boolean  @default(false)
+  verified  Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_emails")
 }
