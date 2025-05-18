@@ -6,12 +6,12 @@ import { ColabService } from "../invite/colab/core.colab";
 export async function POST(request: Request) {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.accessToken || !session.user?.id) {
+        if (!session?.accessToken) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
-        const { contributorId } = body;
+        const { contributorId, userId } = body;
 
         if (!contributorId) {
             return NextResponse.json(
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         }
 
         const colabService = new ColabService();
-        const result = await colabService.activateCollaborator(contributorId, session.user.id);
+        const result = await colabService.activateCollaborator(contributorId, userId);
 
         return NextResponse.json(result);
     } catch (error: any) {

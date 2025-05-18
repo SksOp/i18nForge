@@ -1,8 +1,9 @@
 import { i18nForgePrompt } from "./ai.prompt";
-import { LLMFactory, LLMProvider } from "@/llm/factory";
-import { LLMService } from "@/llm/base";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { BaseMessage, SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { LLMService } from "../llm/base";
+import { LLMProvider } from "../llm/factory";
+import { LLMFactory } from "../llm/factory";
 
 export interface TranslationRequest {
     key: string;

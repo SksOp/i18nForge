@@ -1,6 +1,10 @@
 import prisma from "@/lib/prisma";
 import { addDays } from "date-fns";
 import { emailTemplate } from "../email/email.template";
+import { PrismaClient } from "@prisma/client";
+
+// Get a raw PrismaClient for operations where Accelerate is causing type issues
+const rawPrisma = new PrismaClient();
 
 // Temporary workaround for email service while setting up environment
 class MockEmailService {
@@ -29,7 +33,7 @@ export class ColabService {
     }
 
     public async inviteCollaborator(projectId: string, email: string, senderName: string) {
-        const project = await prisma.project.findUnique({
+        const project = await rawPrisma.project.findUnique({
             where: { id: projectId },
             include: {
                 user: true
@@ -50,7 +54,7 @@ export class ColabService {
         const colabLink = this.generateColabLink(projectId, token);
 
         // Check if there's a user with this email
-        const user = await prisma.user.findFirst({
+        const user = await rawPrisma.user.findFirst({
             where: { email }
         });
 
@@ -62,7 +66,7 @@ export class ColabService {
 
         try {
             // Create contributor record
-            const contributor = await prisma.contributorToProject.create({
+            const contributor = await rawPrisma.contributorToProject.create({
                 data: {
                     projectId,
                     userId: contributorUserId,
@@ -90,14 +94,14 @@ export class ColabService {
     }
 
     public async verifyColabLink(projectId: string, token: string) {
-        const project = await prisma.project.findUnique({
+        const project = await rawPrisma.project.findUnique({
             where: { id: projectId }
         });
         if (!project) {
             throw new Error("Project not found");
         }
 
-        const contributor = await prisma.contributorToProject.findFirst({
+        const contributor = await rawPrisma.contributorToProject.findFirst({
             where: {
                 projectId,
                 colabLink: { contains: token } as any,
@@ -117,7 +121,7 @@ export class ColabService {
     }
 
     public async activateCollaborator(contributorId: string, userId: string) {
-        const contributor = await prisma.contributorToProject.findUnique({
+        const contributor = await rawPrisma.contributorToProject.findUnique({
             where: { id: contributorId }
         });
 
@@ -125,7 +129,7 @@ export class ColabService {
             throw new Error("Contributor not found");
         }
 
-        await prisma.contributorToProject.update({
+        await rawPrisma.contributorToProject.update({
             where: { id: contributorId },
             data: {
                 userId,
