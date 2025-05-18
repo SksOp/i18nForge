@@ -104,7 +104,7 @@ export default function TranslationsPage({
             "Content-Type": "application/json",
             "x-user-accessToken": session?.accessToken || "",
           },
-        })
+        }),
       ]);
 
       const response = fileResponse;
@@ -181,6 +181,7 @@ export default function TranslationsPage({
     setIsDialogOpen(false);
     setBranchName("");
   };
+  console.log("dataForTable", JSON.stringify(tableData, null, 2));
   return (
     <Layout className="gap-6">
       {/* Header Section */}
@@ -263,6 +264,7 @@ export default function TranslationsPage({
         <TranslationsTable
           data={tableData}
           fileNames={fileNames}
+          filesState={filesState}
           selectedBranch={selectedBranch || ""}
           allBranches={branchData?.branches ?? []}
         />

@@ -4,39 +4,41 @@ import {
   TranslationFiles,
 } from "@/types/translations";
 
-export function flattenTranslations(
-  obj: TranslationFile,
+function flattenTranslations(
+  obj: Record<string, any>,
   prefix = ""
 ): Record<string, string> {
-  return Object.keys(obj).reduce((acc, key) => {
-    const prefixedKey = prefix ? `${prefix}.${key}` : key;
+  let result: Record<string, string> = {};
 
-    if (typeof obj[key] === "object" && obj[key] !== null) {
-      Object.assign(acc, flattenTranslations(obj[key], prefixedKey));
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}.${key}` : key;
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      Object.assign(result, flattenTranslations(value, newKey));
     } else {
-      acc[prefixedKey] = obj[key];
+      // Leaf node - save the string value
+      result[newKey] = value;
     }
+  }
 
-    return acc;
-  }, {} as Record<string, string>);
+  return result;
 }
 
-export function getAllKeys(files: TranslationFiles): string[] {
-  const allKeys = new Set<string>();
+function getAllKeys(files: TranslationFiles): string[] {
+  const allKeysSet = new Set<string>();
 
-  Object.values(files).forEach((file) => {
-    const flattened = flattenTranslations(file);
-    Object.keys(flattened).forEach((key) => allKeys.add(key));
+  Object.values(files).forEach((fileContent) => {
+    const flattened = flattenTranslations(fileContent);
+    Object.keys(flattened).forEach((key) => allKeysSet.add(key));
   });
 
-  return Array.from(allKeys).sort();
+  return Array.from(allKeysSet);
 }
 
 export function createTableData(files: TranslationFiles): TranslationEntry[] {
   const allKeys = getAllKeys(files);
   const fileNames = Object.keys(files);
-  // console.log("all", allKeys);
-  // console.log("files", fileNames);
+
   return allKeys.map((key) => {
     const entry: TranslationEntry = { key };
 
@@ -47,4 +49,52 @@ export function createTableData(files: TranslationFiles): TranslationEntry[] {
 
     return entry;
   });
+}
+
+export function unflattenTranslations(
+  flatObj: Record<string, string>
+): TranslationFile {
+  const result: TranslationFile = {};
+
+  for (const flatKey in flatObj) {
+    const keys = flatKey.split(".");
+    let current: any = result;
+
+    keys.forEach((key, index) => {
+      if (index === keys.length - 1) {
+        current[key] = flatObj[flatKey];
+      } else {
+        if (!(key in current)) {
+          current[key] = {};
+        }
+        current = current[key];
+      }
+    });
+  }
+
+  return result;
+}
+
+export function recreateTranslationFiles(
+  tableData: TranslationEntry[]
+): TranslationFiles {
+  const result: TranslationFiles = {};
+
+  if (tableData.length === 0) return result;
+
+  const fileNames = Object.keys(tableData[0]).filter((key) => key !== "key");
+
+  fileNames.forEach((fileName) => {
+    const flatMap: Record<string, string> = {};
+
+    tableData.forEach((entry) => {
+      if (entry[fileName]) {
+        flatMap[entry.key] = entry[fileName];
+      }
+    });
+
+    result[fileName] = unflattenTranslations(flatMap);
+  });
+
+  return result;
 }

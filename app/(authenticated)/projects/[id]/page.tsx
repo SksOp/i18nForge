@@ -40,7 +40,7 @@ export default function ProjectPage() {
 
       setDataForTable(table);
     }
-    // console.log("dataForTable", JSON.stringify(table));
+    console.log("dataForTable", JSON.stringify(table, null, 2));
   }, [fileContent, project]);
 
   if (isLoading || fileContentLoading) {

@@ -41,12 +41,14 @@ import {
 } from "./ui/select";
 import { Loader2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+import { unflattenTranslations } from "@/utils/translation-utils";
 
 interface TranslationsTableProps {
   data: TranslationEntry[];
   fileNames: string[];
   allBranches: string[];
   selectedBranch: string;
+  filesState: Record<string, any>;
   onTranslationUpdate?: (key: string, language: string, value: string) => void;
 }
 
@@ -62,6 +64,7 @@ export function TranslationsTable({
   fileNames,
   selectedBranch,
   allBranches,
+  filesState,
   onTranslationUpdate,
 }: TranslationsTableProps) {
   const [editingCell, setEditingCell] = useState<{
@@ -127,14 +130,14 @@ export function TranslationsTable({
   const getDefaultBranch = async () => {
     try {
       const res = await fetch(`/api/project/meta/branch/db?id=${projectId}`);
-      if (!res.ok) throw new Error('Failed to fetch default branch');
+      if (!res.ok) throw new Error("Failed to fetch default branch");
       const data = await res.json();
       return data.defaultBranch;
     } catch (error) {
-      console.error('Error fetching default branch:', error);
+      console.error("Error fetching default branch:", error);
       return selectedBranch;
     }
-  }
+  };
 
   useEffect(() => {
     if (projectId) {
@@ -180,27 +183,44 @@ export function TranslationsTable({
 
   const handleCommit = async () => {
     if (!projectId) return;
-    try {
-      const completeFileContents: Record<string, Record<string, string>> = {};
 
+    try {
+      const updatedFlatFiles: Record<string, Record<string, string>> = {};
+
+      // 1. Build flattened files with edits
       fileNames.forEach((lang) => {
-        completeFileContents[lang] = {};
+        updatedFlatFiles[lang] = {};
         data.forEach((entry) => {
           const edited = editedValues.find(
             (v) => v.key === entry.key && v.language === lang
           );
-          completeFileContents[lang][entry.key] =
+          updatedFlatFiles[lang][entry.key] =
             edited?.newValue ?? entry[lang] ?? "";
         });
       });
 
-      const transformedContent = Object.entries(completeFileContents).map(
-        ([language, content]) => ({
-          path: language,
-          content: JSON.stringify(content),
-        })
-      );
+      // 2. Unflatten and compare
+      const changedFiles: { path: string; content: string }[] = [];
 
+      fileNames.forEach((lang) => {
+        const newNested = unflattenTranslations(updatedFlatFiles[lang]);
+        const original = filesState[lang];
+
+        const isEqual = JSON.stringify(original) === JSON.stringify(newNested);
+        if (!isEqual) {
+          changedFiles.push({
+            path: lang,
+            content: JSON.stringify(newNested, null, 2),
+          });
+        }
+      });
+
+      if (changedFiles.length === 0) {
+        toast.info("No changes to commit.");
+        return;
+      }
+
+      // 3. Commit only changed files
       setIsCommitting(true);
       const res = await fetch(
         `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(
@@ -211,11 +231,13 @@ export function TranslationsTable({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             branch: branchName,
-            content: transformedContent,
+            content: changedFiles,
           }),
         }
       );
+
       setIsCommitting(false);
+
       if (!res.ok) throw new Error("Failed to commit changes");
 
       queryClient.invalidateQueries({ queryKey: ["fileContent", projectId] });
@@ -223,13 +245,19 @@ export function TranslationsTable({
       setEditedValues([]);
       setShowCommitDialog(false);
       setCommitMessage("");
+      toast.success("Changes committed successfully!");
     } catch (err) {
       console.error(err);
+      toast.error("Commit failed.");
       setIsCommitting(false);
     }
   };
 
-  const handleAI = async (key: string, value: Record<string, string>, language: string) => {
+  const handleAI = async (
+    key: string,
+    value: Record<string, string>,
+    language: string
+  ) => {
     try {
       setIsAIProcessing(true);
       const res = await fetch(`/api/ai/translation`, {
@@ -288,7 +316,10 @@ export function TranslationsTable({
           const isEditing =
             editingCell?.key === key && editingCell?.language === lang;
           const isEdited = isCellEdited(key, lang);
-          const isProcessing = isAIProcessing && editingCell?.key === key && editingCell?.language === lang;
+          const isProcessing =
+            isAIProcessing &&
+            editingCell?.key === key &&
+            editingCell?.language === lang;
 
           return (
             <div className="flex items-center gap-2">
@@ -334,12 +365,21 @@ export function TranslationsTable({
                   });
                   handleAI(key, translations, lang);
                 }}
-                title={isAIProcessing ? "AI Translation in progress..." : "AI Translate"}
+                title={
+                  isAIProcessing
+                    ? "AI Translation in progress..."
+                    : "AI Translate"
+                }
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                 ) : (
-                  <Wand2 className={cn("h-4 w-4", isAIProcessing ? "opacity-50" : "")} />
+                  <Wand2
+                    className={cn(
+                      "h-4 w-4",
+                      isAIProcessing ? "opacity-50" : ""
+                    )}
+                  />
                 )}
               </Button>
             </div>
