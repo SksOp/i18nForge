@@ -298,7 +298,7 @@ export function TranslationsTable({
           const updated: EditedValue = {
             key,
             language,
-            newValue: data.result.content,
+            newValue: (data.result.content).endsWith("\n") ? (data.result.content).slice(0, -1) : data.result.content,
             originalValue: value[language] || "",
           };
 

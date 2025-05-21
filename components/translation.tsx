@@ -50,7 +50,10 @@ export default function TranslationsPage({
   const [selectedBranch, setSelectedBranch] = useState<string | undefined>(
     undefined
   );
-
+  const [isColabDialogOpen, setIsColabDialogOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
   const {
     data: branchData,
     isLoading,
@@ -148,6 +151,38 @@ export default function TranslationsPage({
       });
     }
   };
+
+  const handleAddCollaborator = async (email: string) => {
+    if (!email) {
+      toast.error("Please enter an email");
+      return;
+    }
+    if (!id) {
+      toast.error("Please select a project");
+      return;
+    }
+    setIsSendingInvite(true);
+    try {
+      const res = await fetch(`/api/contributor/invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId: id,
+          email: email,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to send invite link");
+      const data = await res.json();
+      setInviteLink(data.inviteLink);
+      toast.success("Invite link sent successfully");
+    } catch (error) {
+      toast.error("Failed to send invite link");
+    } finally {
+      setIsSendingInvite(false);
+    }
+  }
 
   const handleCreateBranch = async () => {
     setIsCreatingBranch(true);
@@ -248,6 +283,52 @@ export default function TranslationsPage({
                       disabled={!branchName || isCreatingBranch}
                     >
                       {isCreatingBranch ? "Creating..." : "Create"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={isColabDialogOpen} onOpenChange={setIsColabDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="w-4 h-4" /> Add Collaborator
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Collaborator</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Input
+                      id="email"
+                      placeholder="Enter email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    {inviteLink && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={inviteLink}
+                          readOnly
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(inviteLink);
+                            toast.success("Link copied to clipboard!");
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleDialogClose} variant="outline">
+                      Cancel
+                    </Button>
+                    <Button onClick={() => handleAddCollaborator(email)} disabled={isSendingInvite}>
+                      {isSendingInvite ? "Sending..." : "Send Invite Link"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
