@@ -2,25 +2,15 @@ import prisma from "@/lib/prisma";
 import { addDays } from "date-fns";
 import { emailTemplate } from "../email/email.template";
 import { PrismaClient } from "@prisma/client";
+import { EmailService } from "../email/email.core";
 
-// Get a raw PrismaClient for operations where Accelerate is causing type issues
 const rawPrisma = new PrismaClient();
 
-// Temporary workaround for email service while setting up environment
-class MockEmailService {
-    async sendEmail(to: string, subject: string, html: string): Promise<any> {
-        console.log(`[MOCK EMAIL] To: ${to}, Subject: ${subject}`);
-        // Log first 100 chars of HTML to verify template is being used
-        console.log(`HTML content (truncated): ${html.substring(0, 100)}...`);
-        return Promise.resolve({ messageId: 'mock-id-' + Date.now() });
-    }
-}
-
 export class ColabService {
-    private emailService: MockEmailService;
+    private emailService: EmailService;
 
     constructor() {
-        this.emailService = new MockEmailService();
+        this.emailService = new EmailService();
     }
 
     private generateColabLink(projectId: string, token: string) {
@@ -43,17 +33,9 @@ export class ColabService {
         if (!project) {
             throw new Error("Project not found");
         }
-
-        // Generate unique token for the link
         const token = this.generateToken();
-
-        // Set expiration date (7 days from now)
         const expiresAt = addDays(new Date(), 7);
-
-        // Create the colab link
         const colabLink = this.generateColabLink(projectId, token);
-
-        // Check if there's a user with this email
         const user = await rawPrisma.user.findFirst({
             where: { email }
         });
@@ -65,7 +47,6 @@ export class ColabService {
         }
 
         try {
-            // Create contributor record
             const contributor = await rawPrisma.contributorToProject.create({
                 data: {
                     projectId,
@@ -74,14 +55,17 @@ export class ColabService {
                     colabLink,
                     expiresAt,
                     status: "pending"
-                } as any // Type assertion to bypass schema validation for now
+                } as any
             });
-
-            await this.emailService.sendEmail(
-                email,
-                `You've been invited to collaborate on ${project.name}`,
-                emailTemplate(project.name, colabLink, senderName)
-            );
+            try {
+                await this.emailService.sendEmail(
+                    email,
+                    `You've been invited to collaborate on ${project.name}`,
+                    emailTemplate(project.name, colabLink, senderName)
+                );
+            } catch (error) {
+                console.error("Error sending email:", error);
+            }
 
             return {
                 success: true,
