@@ -50,7 +50,10 @@ export default function TranslationsPage({
   const [selectedBranch, setSelectedBranch] = useState<string | undefined>(
     undefined
   );
-
+  const [isColabDialogOpen, setIsColabDialogOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
   const {
     data: branchData,
     isLoading,
@@ -82,27 +85,35 @@ export default function TranslationsPage({
 
   useEffect(() => {
     if (branchData?.branches.length && !selectedBranch) {
-      const defaultBranch = branchData.branches[0];
+      const defaultBranch = branchData.defaultBranch;
       handleBranchChange(defaultBranch);
     }
   }, [branchData]);
   const handleBranchChange = async (value: string) => {
     const loadingToast = toast.loading("Checking branch...");
+    if (!id) return;
     try {
-      const response = await fetch(
-        `/api/project/meta/file?id=${id}&branch=${value}`,
-        {
+      const [fileResponse, branchResponse] = await Promise.all([
+        fetch(`/api/project/meta/file?id=${id}&branch=${value}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             "x-user-accessToken": session?.accessToken || "",
           },
-        }
-      );
+        }),
+        fetch(`/api/project/meta/branch?id=${id}&branch=${value}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-accessToken": session?.accessToken || "",
+          },
+        }),
+      ]);
+
+      const response = fileResponse;
       if (!response.ok) throw new Error("Failed to fetch branch files");
 
       const fileContent = await response.json();
-      console.log("branchFiles", fileContent);
       const dataForTable: Record<string, any> = {};
       if (fileContent?.fileContent) {
         fileNames.forEach((path, index) => {
@@ -111,10 +122,20 @@ export default function TranslationsPage({
             if (typeof content === "object") {
               dataForTable[path] = content;
             } else if (typeof content === "string") {
-              dataForTable[path] = JSON.parse(content);
+              try {
+                dataForTable[path] = JSON.parse(content);
+              } catch (error) {
+                console.error(`Error parsing content for ${path}:`, error);
+                toast.error(`Error parsing content for ${path}:`, {
+                  id: loadingToast,
+                });
+              }
             }
           } catch (error) {
             console.error(`Error parsing content for ${path}:`, error);
+            toast.error(`Error parsing content for ${path}:`, {
+              id: loadingToast,
+            });
           }
         });
       }
@@ -130,6 +151,38 @@ export default function TranslationsPage({
       });
     }
   };
+
+  const handleAddCollaborator = async (email: string) => {
+    if (!email) {
+      toast.error("Please enter an email");
+      return;
+    }
+    if (!id) {
+      toast.error("Please select a project");
+      return;
+    }
+    setIsSendingInvite(true);
+    try {
+      const res = await fetch(`/api/contributor/invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId: id,
+          email: email,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to send invite link");
+      const data = await res.json();
+      setInviteLink(data.inviteLink);
+      toast.success("Invite link sent successfully");
+    } catch (error) {
+      toast.error("Failed to send invite link");
+    } finally {
+      setIsSendingInvite(false);
+    }
+  }
 
   const handleCreateBranch = async () => {
     setIsCreatingBranch(true);
@@ -163,6 +216,7 @@ export default function TranslationsPage({
     setIsDialogOpen(false);
     setBranchName("");
   };
+  console.log("dataForTable", JSON.stringify(tableData, null, 2));
   return (
     <Layout className="gap-6">
       {/* Header Section */}
@@ -233,6 +287,52 @@ export default function TranslationsPage({
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              <Dialog open={isColabDialogOpen} onOpenChange={setIsColabDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="w-4 h-4" /> Add Collaborator
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Collaborator</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Input
+                      id="email"
+                      placeholder="Enter email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    {inviteLink && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={inviteLink}
+                          readOnly
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(inviteLink);
+                            toast.success("Link copied to clipboard!");
+                          }}
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleDialogClose} variant="outline">
+                      Cancel
+                    </Button>
+                    <Button onClick={() => handleAddCollaborator(email)} disabled={isSendingInvite}>
+                      {isSendingInvite ? "Sending..." : "Send Invite Link"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </>
           )}
 
@@ -241,13 +341,12 @@ export default function TranslationsPage({
           </Button>
         </div>
       </div>
-
-      {/* Main Table Section */}
       <div className="rounded-lg border bg-card overflow-hidden shadow-sm">
         <TranslationsTable
           data={tableData}
           fileNames={fileNames}
-          selectedBranch={selectedBranch ?? "main"}
+          filesState={filesState}
+          selectedBranch={selectedBranch || ""}
           allBranches={branchData?.branches ?? []}
         />
       </div>

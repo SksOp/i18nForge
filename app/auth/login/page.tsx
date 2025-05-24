@@ -22,13 +22,12 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     if (session) {
-      console.log("Session data:", session);
-      // Fix: Access token is in session.accessToken
+      // console.log("Session data:", session);
       const accessToken = session.accessToken;
-      console.log("GitHub access token:", accessToken);
+      // console.log("GitHub access token:", accessToken);
     }
   }, [session]);
-  console.log(status);
+  // console.log(status);
   if (status === "loading") {
     return (
       <div className="flex flex-col h-screen w-full items-center justify-center">

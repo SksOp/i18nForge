@@ -83,7 +83,7 @@ function FilePathInput({
         }),
       });
       const data = await response.json();
-      console.log(`Fetched tree for path: "${path}"`, data);
+      // console.log(`Fetched tree for path: "${path}"`, data);
       return data;
     } catch (error) {
       console.error("Error fetching file tree:", error);
@@ -287,6 +287,9 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
     name: "langFiles",
   });
   const router = useRouter();
+  const [defaultBranch, setDefaultBranch] = useState<string | null>(null);
+
+
 
   // Get branch from URL
   const [branch, setBranch] = useState<string | null>(null);
@@ -298,7 +301,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
         owner: owner,
         ownerType: "user",
         paths: data.langFiles,
-        branch: branch ?? "main",
+        branch: branch ?? defaultBranch ?? "",
         repoName: repo,
       });
       if (createProjectMutation.isSuccess) {
@@ -357,7 +360,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
                       onChange={field.onChange}
                       owner={owner}
                       repo={repo}
-                      branch={branch ?? "main"}
+                      branch={branch ?? defaultBranch ?? ""}
                       error={fieldState.error?.message}
                     />
                   )}

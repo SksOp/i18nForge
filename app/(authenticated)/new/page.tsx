@@ -47,7 +47,7 @@ export default function HomePage() {
     data[0]?.id
   );
   const [searchQuery, setSearchQuery] = useState("");
-  console.log("data", data);
+  // console.log("data", data);
   const installation = data?.find(
     (installation) => installation.id === selectedInstallation
   );

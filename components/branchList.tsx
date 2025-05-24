@@ -22,9 +22,10 @@ interface BranchListProps {
   userName: string;
   onSelect: (branch: string) => void;
 }
-
+//{"defaultBranch":"test","branches":["main","test"]}
 export interface BranchData {
   branches: string[];
+  defaultBranch: string;
 }
 
 export default function BranchList({
@@ -35,28 +36,41 @@ export default function BranchList({
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const { data: session, status } = useSession();
+  const [defaultBranch, setDefaultBranch] = useState("");
 
   if (!userName || !repoName) {
     return null;
   }
 
-  const { data: branchData, isLoading } = useQuery({
-    queryKey: ["branches", userName, repoName],
+  const { data: branchData, isLoading } = useQuery<BranchData>({
+    queryKey: ["branches", userName, repoName, session?.accessToken],
     queryFn: async () => {
+      if (!session?.accessToken) {
+        throw new Error("Access token is not available.");
+      }
       const response = await fetch(
         `/api/project/meta/branch?repo=${repoName}&userName=${userName}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "x-user-accessToken": session?.accessToken || "",
+            "x-user-accessToken": session.accessToken,
           },
         }
       );
-      return response.json() as Promise<BranchData>;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch branches: ${response.statusText}`);
+      }
+      return response.json();
     },
-    enabled: !!userName && !!repoName,
+    enabled: !!userName && !!repoName && !!session?.accessToken,
   });
+
+  useEffect(() => {
+    if (branchData?.defaultBranch) {
+      setDefaultBranch(branchData.defaultBranch);
+    }
+  }, [branchData]);
 
   if (isLoading) {
     return (
@@ -65,17 +79,16 @@ export default function BranchList({
       </div>
     );
   }
-  console.log("branchData", branchData);
+
   const branches = branchData?.branches ?? [];
   const filteredBranches = debouncedSearch
     ? branches.filter((branch) =>
-        branch.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
+      branch.toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
     : branches;
-
   return (
     <div className="w-full  ">
-      <Select onValueChange={onSelect}>
+      <Select onValueChange={onSelect} defaultValue={defaultBranch}>
         <SelectTrigger className=" h-10 px-3 py-2 border rounded-md flex items-center justify-between">
           <SelectValue placeholder="Select a branch" />
         </SelectTrigger>

@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TranslationEntry } from "@/types/translations";
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -39,12 +39,16 @@ import {
   SelectContent,
   SelectItem,
 } from "./ui/select";
+import { Loader2, Search, Wand2, X } from "lucide-react";
+import { toast } from "sonner";
+import { unflattenTranslations } from "@/utils/translation-utils";
 
 interface TranslationsTableProps {
   data: TranslationEntry[];
   fileNames: string[];
   allBranches: string[];
   selectedBranch: string;
+  filesState: Record<string, any>;
   onTranslationUpdate?: (key: string, language: string, value: string) => void;
 }
 
@@ -60,6 +64,7 @@ export function TranslationsTable({
   fileNames,
   selectedBranch,
   allBranches,
+  filesState,
   onTranslationUpdate,
 }: TranslationsTableProps) {
   const [editingCell, setEditingCell] = useState<{
@@ -71,10 +76,12 @@ export function TranslationsTable({
   const [commitMessage, setCommitMessage] = useState("");
   const [showCommitDialog, setShowCommitDialog] = useState(false);
   const [branchName, setBranchName] = useState(selectedBranch);
-
   const queryClient = useQueryClient();
   const params = useParams();
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [globalFilter, setGlobalFilter] = useState("");
 
   useEffect(() => {
     setProjectId(params.id as string);
@@ -101,6 +108,27 @@ export function TranslationsTable({
     }
   }, [editedValues, projectId]);
 
+  const filteredData = useMemo(() => {
+    if (!globalFilter.trim()) return data;
+
+    const lowerQuery = globalFilter.toLowerCase();
+
+    return data.filter((entry) => {
+      // Check key column
+      if (entry.key.toLowerCase().includes(lowerQuery)) return true;
+
+      // Check all language columns
+      for (const lang of fileNames) {
+        const val = entry[lang];
+        if (val && val.toLowerCase().includes(lowerQuery)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [data, globalFilter, fileNames]);
+
   const isCellEdited = (key: string, language: string) =>
     editedValues.some(
       (v) =>
@@ -121,6 +149,26 @@ export function TranslationsTable({
     setEditingCell({ key, language });
     setEditValue(currentValue);
   };
+
+  const getDefaultBranch = async () => {
+    try {
+      const res = await fetch(`/api/project/meta/branch/db?id=${projectId}`);
+      if (!res.ok) throw new Error("Failed to fetch default branch");
+      const data = await res.json();
+      return data.defaultBranch;
+    } catch (error) {
+      console.error("Error fetching default branch:", error);
+      return selectedBranch;
+    }
+  };
+
+  useEffect(() => {
+    if (projectId) {
+      getDefaultBranch().then((branch) => {
+        setBranchName(branch);
+      });
+    }
+  }, [projectId]);
 
   const commitEdit = () => {
     if (editingCell) {
@@ -156,36 +204,47 @@ export function TranslationsTable({
     else if (e.key === "Escape") setEditingCell(null);
   };
 
-  const handleSaveRow = (key: string) => {
-    const rowEdits = editedValues.filter((v) => v.key === key);
-    rowEdits.forEach((v) => {
-      onTranslationUpdate?.(v.key, v.language, v.newValue);
-    });
-  };
-
   const handleCommit = async () => {
     if (!projectId) return;
-    try {
-      const completeFileContents: Record<string, Record<string, string>> = {};
 
+    try {
+      const updatedFlatFiles: Record<string, Record<string, string>> = {};
+
+      // 1. Build flattened files with edits
       fileNames.forEach((lang) => {
-        completeFileContents[lang] = {};
+        updatedFlatFiles[lang] = {};
         data.forEach((entry) => {
           const edited = editedValues.find(
             (v) => v.key === entry.key && v.language === lang
           );
-          completeFileContents[lang][entry.key] =
+          updatedFlatFiles[lang][entry.key] =
             edited?.newValue ?? entry[lang] ?? "";
         });
       });
 
-      const transformedContent = Object.entries(completeFileContents).map(
-        ([language, content]) => ({
-          path: language,
-          content: JSON.stringify(content),
-        })
-      );
+      // 2. Unflatten and compare
+      const changedFiles: { path: string; content: string }[] = [];
 
+      fileNames.forEach((lang) => {
+        const newNested = unflattenTranslations(updatedFlatFiles[lang]);
+        const original = filesState[lang];
+
+        const isEqual = JSON.stringify(original) === JSON.stringify(newNested);
+        if (!isEqual) {
+          changedFiles.push({
+            path: lang,
+            content: JSON.stringify(newNested, null, 2),
+          });
+        }
+      });
+
+      if (changedFiles.length === 0) {
+        toast.info("No changes to commit.");
+        return;
+      }
+
+      // 3. Commit only changed files
+      setIsCommitting(true);
       const res = await fetch(
         `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(
           commitMessage
@@ -195,10 +254,12 @@ export function TranslationsTable({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             branch: branchName,
-            content: transformedContent,
+            content: changedFiles,
           }),
         }
       );
+
+      setIsCommitting(false);
 
       if (!res.ok) throw new Error("Failed to commit changes");
 
@@ -207,8 +268,55 @@ export function TranslationsTable({
       setEditedValues([]);
       setShowCommitDialog(false);
       setCommitMessage("");
+      toast.success("Changes committed successfully!");
     } catch (err) {
       console.error(err);
+      toast.error("Commit failed.");
+      setIsCommitting(false);
+    }
+  };
+
+  const handleAI = async (
+    key: string,
+    value: Record<string, string>,
+    language: string
+  ) => {
+    try {
+      setIsAIProcessing(true);
+      const res = await fetch(`/api/ai/translation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, value, language }),
+      });
+      const data = await res.json();
+
+      if (data.result) {
+        setEditedValues((prev) => {
+          const existingIndex = prev.findIndex(
+            (v) => v.key === key && v.language === language
+          );
+          const updated: EditedValue = {
+            key,
+            language,
+            newValue: (data.result.content).endsWith("\n") ? (data.result.content).slice(0, -1) : data.result.content,
+            originalValue: value[language] || "",
+          };
+
+          if (existingIndex >= 0) {
+            const next = [...prev];
+            next[existingIndex] = updated;
+            toast.success("AI translation completed");
+            return next;
+          }
+          toast.success("AI translation completed");
+          return [...prev, updated];
+        });
+      }
+    } catch (error) {
+      console.error("AI translation failed:", error);
+      toast.error("AI translation failed");
+    } finally {
+      setIsAIProcessing(false);
     }
   };
 
@@ -231,55 +339,82 @@ export function TranslationsTable({
           const isEditing =
             editingCell?.key === key && editingCell?.language === lang;
           const isEdited = isCellEdited(key, lang);
+          const isProcessing =
+            isAIProcessing &&
+            editingCell?.key === key &&
+            editingCell?.language === lang;
 
           return (
-            <div
-              className={cn(
-                "p-2 truncate cursor-pointer",
-                isEdited ? "bg-yellow-100" : ""
-              )}
-              onClick={() =>
-                handleCellClick(key, lang, editedVal ?? entry[lang] ?? "")
-              }
-            >
-              {isEditing ? (
-                <Input
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  onBlur={commitEdit}
-                  onKeyDown={handleKeyDown}
-                  autoFocus
-                />
-              ) : (
-                <span className="line-clamp-2">
-                  {editedVal ?? entry[lang] ?? "-"}
-                </span>
-              )}
+            <div className="flex items-center gap-2">
+              <div
+                className={cn(
+                  "p-2 truncate cursor-pointer flex-1",
+                  isEdited ? "bg-yellow-100" : "",
+                  isProcessing ? "opacity-50" : ""
+                )}
+                onClick={() =>
+                  handleCellClick(key, lang, editedVal ?? entry[lang] ?? "")
+                }
+              >
+                {isEditing ? (
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                  />
+                ) : (
+                  <span className="line-clamp-2">
+                    {editedVal ?? entry[lang] ?? "-"}
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isAIProcessing}
+                className={cn(
+                  "h-8 w-8",
+                  isProcessing ? "bg-blue-50" : "",
+                  isAIProcessing ? "cursor-not-allowed" : ""
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const translations: Record<string, string> = {};
+                  fileNames.forEach((l) => {
+                    const editedVal = getEditedValue(key, l);
+                    translations[l] = editedVal ?? entry[l] ?? "";
+                  });
+                  handleAI(key, translations, lang);
+                }}
+                title={
+                  isAIProcessing
+                    ? "AI Translation in progress..."
+                    : "AI Translate"
+                }
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                ) : (
+                  <Wand2
+                    className={cn(
+                      "h-4 w-4",
+                      isAIProcessing ? "opacity-50" : ""
+                    )}
+                  />
+                )}
+              </Button>
             </div>
           );
         },
       })),
-      {
-        header: "Actions",
-        cell: ({ row }) => {
-          const key = row.original.key;
-          return editedValues.some((v) => v.key === key) ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => handleSaveRow(key)}
-            >
-              Save Row
-            </Button>
-          ) : null;
-        },
-      },
     ],
-    [editingCell, editValue, editedValues, fileNames]
+    [editingCell, editValue, editedValues, fileNames, isAIProcessing]
   );
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -298,22 +433,22 @@ export function TranslationsTable({
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-2">
               <Label>Branch</Label>
-              <Select onValueChange={setBranchName}>
+              <Select
+                value={branchName}
+                onValueChange={setBranchName}
+                disabled={true}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a branch" />
+                  <SelectValue placeholder="Select branch" />
                 </SelectTrigger>
-                <SelectContent className="w-full">
+                <SelectContent>
                   {allBranches.map((branch) => (
-                    <SelectItem key={branch} value={branch} className="w-full">
+                    <SelectItem key={branch} value={branch}>
                       {branch}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {/* <Input
-                value={branchName}
-                onChange={(e) => setBranchName(e.target.value)}
-              /> */}
             </div>
             <div className="flex flex-col gap-2">
               <Label>Message</Label>
@@ -330,12 +465,35 @@ export function TranslationsTable({
             >
               Cancel
             </Button>
-            <Button onClick={handleCommit}>Commit</Button>
+            <Button onClick={handleCommit} disabled={isCommitting}>
+              {isCommitting ? "Committing..." : "Commit"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="flex justify-between items-center my-4">
+      <div className="flex items-center justify-end gap-2  p-2">
+        <div className="relative ">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-8 pr-8"
+          />
+          {globalFilter && (
+            <Button
+              variant="ghost"
+              onClick={() => setGlobalFilter("")}
+              className="absolute right-1 top-1 h-7 w-7 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center">
         {editedValues.length > 0 && (
           <div className="text-sm text-amber-600">
             {editedValues.length} pending change(s)
