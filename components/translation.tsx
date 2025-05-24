@@ -154,11 +154,19 @@ export default function TranslationsPage({
 
   const handleAddCollaborator = async (email: string) => {
     if (!email) {
-      toast.error("Please enter an email");
+      toast.error("Please enter an email", { duration: 3000 });
       return;
     }
     if (!id) {
-      toast.error("Please select a project");
+      toast.error("Please select a project", { duration: 3000 });
+      return;
+    }
+    if (email === session?.user?.email) {
+      toast.error("You cannot add yourself as a collaborator", { duration: 3000 });
+      return;
+    }
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      toast.error("Please enter a valid email", { duration: 3000 });
       return;
     }
     setIsSendingInvite(true);
@@ -327,7 +335,11 @@ export default function TranslationsPage({
                     <Button onClick={handleDialogClose} variant="outline">
                       Cancel
                     </Button>
-                    <Button onClick={() => handleAddCollaborator(email)} disabled={isSendingInvite}>
+                    <Button onClick={async () => {
+                      await handleAddCollaborator(email);
+                      setIsColabDialogOpen(false);
+                      toast.success("Invite link sent successfully");
+                    }} disabled={isSendingInvite}>
                       {isSendingInvite ? "Sending..." : "Send Invite Link"}
                     </Button>
                   </DialogFooter>
