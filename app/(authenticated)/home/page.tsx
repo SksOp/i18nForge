@@ -15,10 +15,10 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!projects) {
+    if (!projects || projects.length === 0 || projects.length === undefined) {
       router.push("/new");
     }
-  }, []);
+  }, [projects, router]);
 
   return (
     <Layout className="container mx-auto mt-8 px-4">
