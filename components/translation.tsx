@@ -152,23 +152,27 @@ export default function TranslationsPage({
     }
   };
 
-  const handleAddCollaborator = async (email: string) => {
-    if (!email) {
+  const handleAddCollaborator = async (emails: string) => {
+    const emailArray = emails.split(",").map((email) => email.trim());
+
+    if (!emailArray.length) {
       toast.error("Please enter an email", { duration: 3000 });
       return;
     }
-    if (!id) {
-      toast.error("Please select a project", { duration: 3000 });
-      return;
-    }
-    if (email === session?.user?.email) {
-      toast.error("You cannot add yourself as a collaborator", { duration: 3000 });
-      return;
-    }
-    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-      toast.error("Please enter a valid email", { duration: 3000 });
-      return;
-    }
+    emailArray.forEach(async (email) => {
+      if (!id) {
+        toast.error("Please select a project", { duration: 3000 });
+        return;
+      }
+      if (email === session?.user?.email) {
+        toast.error("You cannot add yourself as a collaborator", { duration: 3000 });
+        return;
+      }
+      if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+        toast.error("Please enter a valid email", { duration: 3000 });
+        return;
+      }
+    })
     setIsSendingInvite(true);
     try {
       const res = await fetch(`/api/contributor/invite`, {
@@ -188,7 +192,7 @@ export default function TranslationsPage({
     } catch (error) {
       toast.error("Failed to send invite link");
     } finally {
-      setIsSendingInvite(false);
+      setIsSendingInvite(false)
     }
   }
 
@@ -295,6 +299,7 @@ export default function TranslationsPage({
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              {/* Add Collaborator Dialog */}
               <Dialog open={isColabDialogOpen} onOpenChange={setIsColabDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -308,7 +313,7 @@ export default function TranslationsPage({
                   <div className="grid gap-4 py-4">
                     <Input
                       id="email"
-                      placeholder="Enter email"
+                      placeholder="Enter emaila (comma separated emails)"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />

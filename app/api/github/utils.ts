@@ -130,3 +130,16 @@ export const verifyRepoAccess = async (
     throw error;
   }
 };
+
+
+//*****************************************************/
+
+
+export const getAccessTokenViaInstallationApp = async (installationId: string) => {
+  const installationAuth = await githubAppAuth({
+    type: "installation",
+    installationId,
+  });
+
+  return installationAuth.token;
+};

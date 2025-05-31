@@ -21,8 +21,7 @@ export const MetaAPI = {
     },
     getFilesContent: (paths: string[], token: string, name: string) => {
         return MetaUtils.getFileContent(paths, token, name);
-    }
-
+    },
 };
 
 

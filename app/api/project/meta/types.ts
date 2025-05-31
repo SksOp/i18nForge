@@ -23,3 +23,19 @@ export interface PullRequestResponse {
     number: number;
   };
 }
+export interface GitHubAppConfig {
+  installationId: string;
+  githubId: string;
+}
+export interface AccessTokenResponse {
+  token: string;
+  expires_at: string;
+  permissions: Record<string, string>;
+  repository_selection: string;
+}
+
+export interface JWTPayload {
+  iat: number;
+  exp: number;
+  iss: string;
+}

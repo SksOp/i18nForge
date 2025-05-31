@@ -21,61 +21,77 @@ export class ColabService {
         return Math.random().toString(36).substring(2, 15) +
             Math.random().toString(36).substring(2, 15);
     }
-
     public async inviteCollaborator(projectId: string, email: string, senderName: string) {
-        const project = await rawPrisma.project.findUnique({
-            where: { id: projectId },
-            include: {
-                user: true
-            }
-        });
-
-        if (!project) {
-            throw new Error("Project not found");
-        }
-        const token = this.generateToken();
-        const expiresAt = addDays(new Date(), 7);
-        const colabLink = this.generateColabLink(projectId, token);
-        const user = await rawPrisma.user.findFirst({
-            where: { email }
-        });
-
-        let contributorUserId = project.userId; // Default to project owner
-
-        if (user) {
-            contributorUserId = user.id;
-        }
-
         try {
-            const contributor = await rawPrisma.contributorToProject.create({
-                data: {
-                    projectId,
-                    userId: contributorUserId,
-                    email,
-                    colabLink,
-                    expiresAt,
-                    status: "pending"
-                } as any
+            const project = await rawPrisma.project.findUnique({
+                where: { id: projectId },
+                include: {
+                    user: true
+                }
             });
-            try {
-                await this.emailService.sendEmail(
-                    email,
-                    `You've been invited to collaborate on ${project.name}`,
-                    emailTemplate(project.name, colabLink, senderName)
-                );
-            } catch (error) {
-                console.error("Error sending email:", error);
+
+            if (!project) {
+                throw new Error("Project not found");
             }
+
+            const token = this.generateToken();
+            const expiresAt = addDays(new Date(), 7);
+            const colabLink = this.generateColabLink(projectId, token);
+
+            const emailArray = email.split(',').map(e => e.trim());
+
+            const result = await rawPrisma.$transaction(async (tx) => {
+                try {
+                    const user = await tx.user.findFirst({
+                        where: { email }
+                    });
+
+                    let contributorUserId = project.userId; // Default to project owner
+                    if (user) {
+                        contributorUserId = user.id;
+                    }
+
+                    const contributor = await tx.contributorToProject.create({
+                        data: {
+                            projectId,
+                            userId: contributorUserId,
+                            email,
+                            colabLink,
+                            expiresAt,
+                            status: "pending"
+                        }
+                    });
+
+                    try {
+                        await this.emailService.sendEmail(
+                            email,
+                            `You've been invited to collaborate on ${project.name}`,
+                            emailTemplate(project.name, colabLink, senderName)
+                        );
+                    } catch (error) {
+                        console.error("Error sending email:", error);
+                        throw new Error("Failed to send invitation email");
+                    }
+
+                    return contributor;
+
+                } catch (error) {
+                    console.error("Transaction error:", error);
+                    throw new Error("Failed to create collaboration invitation");
+                }
+            });
 
             return {
                 success: true,
-                contributor
+                contributor: result
             };
-        } catch (error) {
-            console.error("Error creating collaborator:", error);
-            throw new Error("Failed to create collaborator");
+
+        } catch (error: any) {
+            console.error("inviteCollaborator error:", error);
+            throw new Error(error.message || "Failed to invite collaborator");
         }
     }
+
 
     public async verifyColabLink(projectId: string, token: string) {
         const project = await rawPrisma.project.findUnique({

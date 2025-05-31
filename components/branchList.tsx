@@ -69,8 +69,9 @@ export default function BranchList({
   useEffect(() => {
     if (branchData?.defaultBranch) {
       setDefaultBranch(branchData.defaultBranch);
+      onSelect(branchData.defaultBranch);
     }
-  }, [branchData]);
+  }, [branchData, onSelect]);
 
   if (isLoading) {
     return (
@@ -88,7 +89,11 @@ export default function BranchList({
     : branches;
   return (
     <div className="w-full  ">
-      <Select onValueChange={onSelect} defaultValue={defaultBranch}>
+      <Select
+        onValueChange={onSelect}
+        value={defaultBranch}
+        defaultValue={branchData?.defaultBranch}
+      >
         <SelectTrigger className=" h-10 px-3 py-2 border rounded-md flex items-center justify-between">
           <SelectValue placeholder="Select a branch" />
         </SelectTrigger>
