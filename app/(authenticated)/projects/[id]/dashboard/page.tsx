@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardSettings from "@/components/dashboard-settings";
+import DeleteProject from "@/components/deleteProject";
 import Spinner from "@/components/spinner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Layout from "@/layout/layout";
@@ -110,6 +111,7 @@ function DashboardPage() {
         <TabsContent value="translations"></TabsContent>
         <TabsContent value="settings">
           <DashboardSettings id={project.id} />
+          <DeleteProject id={project.id} />
         </TabsContent>
       </Tabs>
     </Layout>

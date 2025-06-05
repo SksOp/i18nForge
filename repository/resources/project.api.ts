@@ -1,7 +1,7 @@
-export const fetchContributions = async (projectId: string) => {
+export const deleteProjectApi = async (id: string) => {
   try {
-    const response = await fetch(`/api/contributor?projectId=${projectId}`, {
-      method: "GET",
+    const response = await fetch(`/api/project/${id}`, {
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
