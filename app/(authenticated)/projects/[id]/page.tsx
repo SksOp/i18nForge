@@ -11,11 +11,7 @@ import { useEffect, useState } from "react";
 export default function ProjectPage() {
   const params = useParams();
 
-  const {
-    data: project,
-    isLoading,
-    error,
-  } = useQuery(projectQuery(params.id as string));
+  const { data: project, isLoading, error } = useQuery(projectQuery(params.id as string));
   const { data: session } = useSession();
   const { data: fileContent, isLoading: fileContentLoading } = useQuery(
     getFileContent(params.id as string, session?.accessToken || "")
@@ -53,11 +49,7 @@ export default function ProjectPage() {
 
   return (
     <div>
-      <TranslationsPage
-        files={dataForTable}
-        userName={project?.owner ?? " "}
-        repoName={project?.repoName ?? " "}
-      />
+      <TranslationsPage files={dataForTable} userName={project?.owner ?? " "} repoName={project?.repoName ?? " "} />
     </div>
   );
 }

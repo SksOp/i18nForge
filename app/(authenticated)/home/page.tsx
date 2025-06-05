@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Github, User } from "lucide-react";
+import { Github, Plus, User } from "lucide-react";
 import { format } from "date-fns";
 
 export default function HomePage() {
@@ -18,14 +18,18 @@ export default function HomePage() {
     if (!projects || projects.length === 0 || projects.length === undefined) {
       router.push("/new");
     }
-  }, [projects, router]);
+  }, [projects]);
 
   return (
     <Layout className="container mx-auto mt-8 px-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Your Projects</h1>
         <Link href="/new">
-          <Button>Add New Project</Button>
+          <Button>
+            {" "}
+            <Plus />
+            Add New Project
+          </Button>
         </Link>
       </div>
 
@@ -41,10 +45,7 @@ export default function HomePage() {
           {projects.map((project) => {
             const githubRepoUrl = `https://github.com/${project.name}`;
             const githubProfileUrl = `https://github.com/${project.owner}`;
-            const createdAtFormatted = format(
-              new Date(project.createdAt),
-              "PPP"
-            );
+            const createdAtFormatted = format(new Date(project.createdAt), "PPP");
 
             return (
               <div
@@ -56,6 +57,7 @@ export default function HomePage() {
                   href={githubRepoUrl}
                   target="_blank"
                   className="flex items-center space-x-2 text-lg font-semibold hover:underline w-fit"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <Github size={18} />
                   <span>{project.name}</span>
@@ -65,14 +67,13 @@ export default function HomePage() {
                   href={githubProfileUrl}
                   target="_blank"
                   className="mt-2 flex items-center space-x-2 text-sm text-muted-foreground hover:underline w-fit"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <User size={16} />
                   <span>{project.owner}</span>
                 </Link>
 
-                <p className="text-xs text-muted-foreground mt-2">
-                  Created on: {createdAtFormatted}
-                </p>
+                <p className="text-xs text-muted-foreground mt-2">Created on: {createdAtFormatted}</p>
               </div>
             );
           })}

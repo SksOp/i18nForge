@@ -1,10 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  installationQuery,
-  verifyRepoAccessQuery,
-} from "@/state/query/installation";
+import { installationQuery, verifyRepoAccessQuery } from "@/state/query/installation";
 import { Loader, X, FolderIcon, FileIcon, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,8 +143,7 @@ function FilePathInput({
       // Handle backspace - adjust path as needed
       const lastSlashIndex = newValue.lastIndexOf("/");
       if (lastSlashIndex >= 0) {
-        const parentPath =
-          lastSlashIndex === 0 ? "" : newValue.substring(0, lastSlashIndex);
+        const parentPath = lastSlashIndex === 0 ? "" : newValue.substring(0, lastSlashIndex);
         setCurrentPath(parentPath);
         setShowSuggestions(true);
         refetch();
@@ -159,9 +155,7 @@ function FilePathInput({
 
   const handleSuggestionClick = (entry: FileEntry) => {
     const isDirectory = entry.type === "tree";
-    const newPath = currentPath
-      ? `${currentPath}/${entry.name}`
-      : `/${entry.name}`;
+    const newPath = currentPath ? `${currentPath}/${entry.name}` : `/${entry.name}`;
 
     if (isDirectory) {
       setCurrentPath(newPath);
@@ -206,10 +200,7 @@ function FilePathInput({
                   className="px-3 py-2 flex items-center text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
                   onClick={() => {
                     const lastSlashIndex = currentPath.lastIndexOf("/");
-                    const parentPath =
-                      lastSlashIndex > 0
-                        ? currentPath.substring(0, lastSlashIndex)
-                        : "";
+                    const parentPath = lastSlashIndex > 0 ? currentPath.substring(0, lastSlashIndex) : "";
                     setCurrentPath(parentPath);
                     onChange(parentPath ? `${parentPath}/` : "/");
                     refetch();
@@ -220,8 +211,7 @@ function FilePathInput({
                 </li>
               )}
               {fileTree.map((entry: FileEntry, index: number) => {
-                const isJsonFile =
-                  entry.type === "blob" && entry.name.endsWith(".json");
+                const isJsonFile = entry.type === "blob" && entry.name.endsWith(".json");
                 const isDisabled = entry.type === "blob" && !isJsonFile;
 
                 return (
@@ -236,25 +226,16 @@ function FilePathInput({
                     {entry.type === "tree" ? (
                       <FolderIcon className="h-4 w-4 mr-2 text-blue-500" />
                     ) : (
-                      <FileIcon
-                        className={cn(
-                          "h-4 w-4 mr-2",
-                          isJsonFile ? "text-gray-500" : "text-gray-300"
-                        )}
-                      />
+                      <FileIcon className={cn("h-4 w-4 mr-2", isJsonFile ? "text-gray-500" : "text-gray-300")} />
                     )}
                     <span>{entry.name}</span>
-                    {entry.type === "tree" && (
-                      <ChevronRight className="h-4 w-4 ml-auto" />
-                    )}
+                    {entry.type === "tree" && <ChevronRight className="h-4 w-4 ml-auto" />}
                   </li>
                 );
               })}
             </ul>
           ) : (
-            <div className="px-3 py-2 text-sm text-gray-500">
-              No files found or loading...
-            </div>
+            <div className="px-3 py-2 text-sm text-gray-500">No files found or loading...</div>
           )}
         </div>
       )}
@@ -289,8 +270,6 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   const router = useRouter();
   const [defaultBranch, setDefaultBranch] = useState<string | null>(null);
 
-
-
   // Get branch from URL
   const [branch, setBranch] = useState<string | null>(null);
 
@@ -304,12 +283,8 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
         branch: branch ?? defaultBranch ?? "",
         repoName: repo,
       });
-      if (createProjectMutation.isSuccess) {
-        toast.success("Project created successfully");
-        router.push(`/projects/${project.id}`);
-      } else {
-        toast.error("Failed to create project");
-      }
+      toast.success("Project created successfully");
+      router.push(`/projects/${project.id}`);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -327,9 +302,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
           <span className="text-primary">
             {owner}/{repo}
           </span>
-          <span className="ml-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
-            {branch}
-          </span>
+          <span className="ml-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">{branch}</span>
         </h1>
         <Separator className="mb-6" />
         <div className="mb-6 z-40 bg-white">
@@ -343,8 +316,8 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">
-          Note: All paths should start with / representing the root of your
-          repository. Click in the field or type / to browse files.
+          Note: All paths should start with / representing the root of your repository. Click in the field or type / to
+          browse files.
         </p>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -373,9 +346,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
                   {...form.register(`langFiles.${index}.language`)}
                 />
                 {form.formState.errors.langFiles?.[index]?.language && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.langFiles[index]?.language?.message}
-                  </p>
+                  <p className="text-sm text-red-500">{form.formState.errors.langFiles[index]?.language?.message}</p>
                 )}
               </div>
               <Button
@@ -410,15 +381,9 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
 }
 
 type Params = Promise<{ installationId: string; owner: string; repo: string }>;
-export default function NewProjectPage({
-  params: _params,
-}: {
-  params: Params;
-}) {
+export default function NewProjectPage({ params: _params }: { params: Params }) {
   const params = use(_params);
-  const { data: installation, isLoading } = useQuery(
-    installationQuery(params.installationId)
-  );
+  const { data: installation, isLoading } = useQuery(installationQuery(params.installationId));
 
   const { data: repoAccess, isLoading: isRepoAccessLoading } = useQuery(
     verifyRepoAccessQuery(params.installationId, params.owner, params.repo)
@@ -443,12 +408,8 @@ export default function NewProjectPage({
       <Layout>
         <Card className="shadow-sm ">
           <CardContent className="p-6">
-            <h1 className="text-2xl font-bold mb-4">
-              Repository Access Required
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Additional permissions are needed to access this repository.
-            </p>
+            <h1 className="text-2xl font-bold mb-4">Repository Access Required</h1>
+            <p className="text-muted-foreground mb-6">Additional permissions are needed to access this repository.</p>
             <Button asChild>
               <a
                 href={`https://github.com/organizations/${params.owner}/settings/installations/${params.installationId}`}
