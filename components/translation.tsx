@@ -182,7 +182,7 @@ export default function TranslationsPage({
         },
         body: JSON.stringify({
           projectId: id,
-          email: email,
+          emails: email,
         }),
       });
       if (!res.ok) throw new Error("Failed to send invite link");

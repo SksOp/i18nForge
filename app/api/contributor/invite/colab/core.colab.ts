@@ -8,6 +8,7 @@ const rawPrisma = new PrismaClient();
 
 export class ColabService {
   private emailService: EmailService;
+  private transactionTimeout = 10000;
 
   constructor() {
     this.emailService = new EmailService();
@@ -20,7 +21,7 @@ export class ColabService {
   private generateToken(): string {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
-  public async inviteCollaborator(projectId: string, emails: string[], senderName: string) {
+  public async inviteCollaborator(projectId: string, emailsString: string, senderName: string) {
     const project = await rawPrisma.project.findUnique({
       where: { id: projectId },
       include: { user: true },
@@ -31,14 +32,19 @@ export class ColabService {
     }
 
     const expiresAt = addDays(new Date(), 7);
-
     const results = [];
-
+    const failedEmails: Record<string, string> = {};
+    const successEmails: Record<string, string> = {};
+    const emails = emailsString.split(",").map((email) => email.trim());
     await rawPrisma.$transaction(async (tx) => {
       for (const email of emails) {
+        if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+          failedEmails[email] = "Invalid email";
+          continue;
+        }
+
         const token = this.generateToken();
         const colabLink = this.generateColabLink(projectId, token);
-
         const user = await tx.user.findFirst({
           where: { email },
         });
@@ -58,25 +64,32 @@ export class ColabService {
             status: "pending",
           },
         });
-
-        try {
-          await this.emailService.sendEmail(
-            email,
-            `You've been invited to collaborate on ${project.name}`,
-            emailTemplate(project.name, colabLink, senderName)
-          );
-        } catch (error) {
-          console.error(`Error sending email to ${email}:`, error);
-          throw new Error(`Failed to send email to ${email}`);
-        }
-
         results.push(contributor);
+        successEmails[email] = "Invite sent";
       }
+    }, {
+      timeout: this.transactionTimeout // 10 second timeout
     });
 
+    for (const contributor of results) {
+      try {
+        console.log("Sending email to", contributor.email);
+        await this.emailService.sendEmail(
+          contributor.email,
+          `You've been invited to collaborate on ${project.name}`,
+          emailTemplate(project.name, contributor.colabLink, senderName)
+        );
+        successEmails[contributor.email] = "Invite sent";
+      } catch (error) {
+        console.error(`Error sending email to ${contributor.email}:`, error);
+        failedEmails[contributor.email] = "Error sending email";
+      }
+    }
     return {
       success: true,
       contributors: results,
+      failedEmails: failedEmails,
+      successEmails: successEmails,
     };
   }
 

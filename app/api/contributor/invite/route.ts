@@ -17,6 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Project ID and email are required" }, { status: 400 });
     }
 
+
     const colabService = new ColabService();
     const result = await colabService.inviteCollaborator(projectId, emails, session.user?.name || "i18nForge Team");
 
