@@ -1,13 +1,18 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { branchQuery } from "@/state/query/project";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import useDebounce from "@/hooks/use-debounce";
-import Spinner from "./spinner";
-import { useSession } from "next-auth/react";
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
+
+import { branchQuery } from '@/state/query/project';
+import { useQuery } from '@tanstack/react-query';
+import { Search } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+import useDebounce from '@/hooks/use-debounce';
+
+import Spinner from './spinner';
 import {
   Select,
   SelectContent,
@@ -15,7 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from './ui/select';
 
 interface BranchListProps {
   repoName: string;
@@ -28,35 +33,31 @@ export interface BranchData {
   defaultBranch: string;
 }
 
-export default function BranchList({
-  repoName,
-  userName,
-  onSelect,
-}: BranchListProps) {
-  const [search, setSearch] = useState("");
+export default function BranchList({ repoName, userName, onSelect }: BranchListProps) {
+  const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const { data: session, status } = useSession();
-  const [defaultBranch, setDefaultBranch] = useState("");
+  const [defaultBranch, setDefaultBranch] = useState('');
 
   if (!userName || !repoName) {
     return null;
   }
 
   const { data: branchData, isLoading } = useQuery<BranchData>({
-    queryKey: ["branches", userName, repoName, session?.accessToken],
+    queryKey: ['branches', userName, repoName, session?.accessToken],
     queryFn: async () => {
       if (!session?.accessToken) {
-        throw new Error("Access token is not available.");
+        throw new Error('Access token is not available.');
       }
       const response = await fetch(
         `/api/project/meta/branch?repo=${repoName}&userName=${userName}`,
         {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "Content-Type": "application/json",
-            "x-user-accessToken": session.accessToken,
+            'Content-Type': 'application/json',
+            'x-user-accessToken': session.accessToken,
           },
-        }
+        },
       );
       if (!response.ok) {
         throw new Error(`Failed to fetch branches: ${response.statusText}`);
@@ -83,9 +84,7 @@ export default function BranchList({
 
   const branches = branchData?.branches ?? [];
   const filteredBranches = debouncedSearch
-    ? branches.filter((branch) =>
-      branch.toLowerCase().includes(debouncedSearch.toLowerCase())
-    )
+    ? branches.filter((branch) => branch.toLowerCase().includes(debouncedSearch.toLowerCase()))
     : branches;
   return (
     <div className="w-full  ">

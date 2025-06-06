@@ -1,5 +1,12 @@
-"use client";
-import { Button } from "@/components/ui/button";
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { ReactNode } from 'react';
+
+import Layout from '@/layout/layout';
+import { CheckCircle2, Github, Globe, MessageSquare, Rocket, Zap } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -7,18 +14,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import Layout from "@/layout/layout";
-import {
-  CheckCircle2,
-  Github,
-  Globe,
-  MessageSquare,
-  Rocket,
-  Zap,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { ReactNode } from "react";
+} from '@/components/ui/card';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -34,20 +30,17 @@ export default function LandingPage() {
                   Seamless i18n Management for Your Website
                 </h1>
                 <p className="max-w-[600px] text-foreground/80 md:text-xl">
-                  Say goodbye to messy translation files! Effortlessly manage,
-                  sync, and collaborate on i18n files with GitHub integration.
-                  Ensure consistency across all languages—no missing keys, no
-                  manual hassle.
+                  Say goodbye to messy translation files! Effortlessly manage, sync, and collaborate
+                  on i18n files with GitHub integration. Ensure consistency across all languages—no
+                  missing keys, no manual hassle.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Button size="lg" onClick={() => router.push("/home")}>
+                <Button size="lg" onClick={() => router.push('/home')}>
                   Get Started for Free
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                👉 Sync. Collaborate. Automate.
-              </p>
+              <p className="text-sm text-muted-foreground">👉 Sync. Collaborate. Automate.</p>
             </div>
             <div className="flex justify-center">
               <DemoCard />
@@ -107,9 +100,7 @@ export default function LandingPage() {
       <section className="bg-muted/50 py-20" id="pricing">
         <div className="container mx-auto px-4 md:px-6">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-              Pricing
-            </h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Pricing</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Choose the plan that fits your needs
             </p>
@@ -119,10 +110,10 @@ export default function LandingPage() {
               title="Free"
               description="Perfect for individual developers"
               features={[
-                "Single user",
-                "Manage one GitHub repo",
-                "Basic translation management",
-                "Manual sync with GitHub",
+                'Single user',
+                'Manage one GitHub repo',
+                'Basic translation management',
+                'Manual sync with GitHub',
               ]}
               price="$0"
               buttonText="Get Started"
@@ -132,11 +123,11 @@ export default function LandingPage() {
               title="Pro"
               description="For growing teams and projects"
               features={[
-                "Multi-user collaboration",
-                "Automatic PRs with AI-generated values",
-                "Direct commit to branch from the UI",
-                "Advanced filtering and search",
-                "Priority email support",
+                'Multi-user collaboration',
+                'Automatic PRs with AI-generated values',
+                'Direct commit to branch from the UI',
+                'Advanced filtering and search',
+                'Priority email support',
               ]}
               price="$19"
               buttonText="Upgrade to Pro"
@@ -147,12 +138,12 @@ export default function LandingPage() {
               title="Enterprise"
               description="For large organizations"
               features={[
-                "Custom workflows",
-                "Priority support",
-                "Dedicated features",
-                "SSO authentication",
-                "Custom integrations",
-                "Dedicated account manager",
+                'Custom workflows',
+                'Priority support',
+                'Dedicated features',
+                'SSO authentication',
+                'Custom integrations',
+                'Dedicated account manager',
               ]}
               price="Contact us"
               buttonText="Contact Sales"
@@ -167,18 +158,13 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <h3 className="mb-4 text-lg font-medium text-primary-foreground">
-                i18n Forge
-              </h3>
+              <h3 className="mb-4 text-lg font-medium text-primary-foreground">i18n Forge</h3>
               <p className="text-sm">
-                Seamless i18n management for your website. Say goodbye to messy
-                translation files!
+                Seamless i18n management for your website. Say goodbye to messy translation files!
               </p>
             </div>
             <div>
-              <h3 className="mb-4 text-lg font-medium text-primary-foreground">
-                Product
-              </h3>
+              <h3 className="mb-4 text-lg font-medium text-primary-foreground">Product</h3>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a href="#features" className="hover:text-primary-foreground">
@@ -198,9 +184,7 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="mb-4 text-lg font-medium text-primary-foreground">
-                Resources
-              </h3>
+              <h3 className="mb-4 text-lg font-medium text-primary-foreground">Resources</h3>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a href="#" className="hover:text-primary-foreground">
@@ -220,9 +204,7 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="mb-4 text-lg font-medium text-primary-foreground">
-                Company
-              </h3>
+              <h3 className="mb-4 text-lg font-medium text-primary-foreground">Company</h3>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a href="#" className="hover:text-primary-foreground">
@@ -263,12 +245,7 @@ interface FeatureCardProps {
   isSoon?: boolean;
 }
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-  isSoon = false,
-}: FeatureCardProps) {
+function FeatureCard({ icon, title, description, isSoon = false }: FeatureCardProps) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
@@ -295,7 +272,7 @@ interface PricingCardProps {
   features: string[];
   price: string;
   buttonText: string;
-  buttonVariant: "outline" | "default";
+  buttonVariant: 'outline' | 'default';
   popular?: boolean;
 }
 
@@ -309,11 +286,7 @@ function PricingCard({
   popular = false,
 }: PricingCardProps) {
   return (
-    <Card
-      className={`relative overflow-hidden ${
-        popular ? "border-primary shadow-lg" : ""
-      }`}
-    >
+    <Card className={`relative overflow-hidden ${popular ? 'border-primary shadow-lg' : ''}`}>
       {popular && (
         <div className="absolute right-0 top-0 rounded-bl-lg bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
           Popular
@@ -326,9 +299,7 @@ function PricingCard({
       <CardContent>
         <div className="mb-4">
           <span className="text-3xl font-bold">{price}</span>
-          {price !== "Contact us" && (
-            <span className="text-slate-600">/month</span>
-          )}
+          {price !== 'Contact us' && <span className="text-slate-600">/month</span>}
         </div>
         <ul className="space-y-2">
           {features.map((feature, index) => (
@@ -357,23 +328,13 @@ const DemoCard = () => {
           <div className="h-3 w-3 rounded-full bg-red-500"></div>
           <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
           <div className="h-3 w-3 rounded-full bg-green-500"></div>
-          <div className="ml-2 text-xs text-muted-foreground">
-            i18n Forge Dashboard
-          </div>
+          <div className="ml-2 text-xs text-muted-foreground">i18n Forge Dashboard</div>
         </div>
         <div className="mt-4 grid grid-cols-4 gap-2 border-b border-border pb-2">
-          <div className="col-span-1 text-xs font-medium text-muted-foreground">
-            Key
-          </div>
-          <div className="col-span-1 text-xs font-medium text-muted-foreground">
-            English
-          </div>
-          <div className="col-span-1 text-xs font-medium text-muted-foreground">
-            Spanish
-          </div>
-          <div className="col-span-1 text-xs font-medium text-muted-foreground">
-            French
-          </div>
+          <div className="col-span-1 text-xs font-medium text-muted-foreground">Key</div>
+          <div className="col-span-1 text-xs font-medium text-muted-foreground">English</div>
+          <div className="col-span-1 text-xs font-medium text-muted-foreground">Spanish</div>
+          <div className="col-span-1 text-xs font-medium text-muted-foreground">French</div>
         </div>
         {[1, 2, 3, 4, 5].map((item) => (
           <div key={item} className="mt-2 grid grid-cols-4 gap-2">

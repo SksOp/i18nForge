@@ -1,11 +1,11 @@
 import 'next-auth';
 
 declare module 'next-auth' {
-    interface User {
-        accessToken?: string;
-    }
+  interface User {
+    accessToken?: string;
+  }
 
-    interface Session {
-        user: User;
-    }
-} 
+  interface Session {
+    user: User;
+  }
+}

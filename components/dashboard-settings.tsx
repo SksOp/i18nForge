@@ -1,20 +1,30 @@
-"use client";
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Copy, Plus } from "lucide-react";
-import { toast } from "sonner";
-import { useSession } from "next-auth/react";
-import { useQuery } from "@tanstack/react-query";
-import { getContributorsQuery } from "@/repository/tanstack/queries/collab.query";
-import Spinner from "./spinner";
-import { Badge } from "./ui/badge";
+'use client';
+
+import { useSession } from 'next-auth/react';
+import React, { useState } from 'react';
+
+import { getContributorsQuery } from '@/repository/tanstack/queries/collab.query';
+import { useQuery } from '@tanstack/react-query';
+import { Copy, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+
+import Spinner from './spinner';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 
 function DashboardSettings({ id }: { id: string }) {
   const [emails, setEmails] = useState<string[]>([]);
-  const [currentEmailInput, setCurrentEmailInput] = useState("");
+  const [currentEmailInput, setCurrentEmailInput] = useState('');
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [inviteLinks, setInviteLinks] = useState<string[]>([]);
   const { data: session } = useSession();
@@ -25,39 +35,43 @@ function DashboardSettings({ id }: { id: string }) {
     const trimmed = currentEmailInput.trim();
 
     // Add the current input if it's not empty and valid
-    if (trimmed && /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed) && !emails.includes(trimmed)) {
+    if (
+      trimmed &&
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed) &&
+      !emails.includes(trimmed)
+    ) {
       allEmails.push(trimmed);
     }
 
     if (!allEmails.length) {
-      toast.error("Please enter at least one valid email");
+      toast.error('Please enter at least one valid email');
       return;
     }
 
-    if (allEmails.includes(session?.user?.email || "")) {
-      toast.error("You cannot invite yourself.");
+    if (allEmails.includes(session?.user?.email || '')) {
+      toast.error('You cannot invite yourself.');
       return;
     }
 
     setIsSendingInvite(true);
     try {
       const res = await fetch(`/api/contributor/invite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectId: id, emails: allEmails }),
       });
 
-      if (!res.ok) throw new Error("Failed to send invite");
+      if (!res.ok) throw new Error('Failed to send invite');
       const data = await res.json();
       const links = data.contributors?.map((c) => c.colabLink).filter(Boolean);
       if (links?.length) {
         setInviteLinks(links);
       }
       setEmails([]);
-      setCurrentEmailInput("");
-      toast.success("Invite link sent!");
+      setCurrentEmailInput('');
+      toast.success('Invite link sent!');
     } catch (err) {
-      toast.error("Failed to send invites");
+      toast.error('Failed to send invites');
     } finally {
       setIsSendingInvite(false);
     }
@@ -70,7 +84,7 @@ function DashboardSettings({ id }: { id: string }) {
       </div>
     );
   if (isError) return <p>Failed to load contributors.</p>;
-  console.log("contributors", contributors);
+  console.log('contributors', contributors);
   return (
     <Card className="w-full p-4 flex flex-col gap-4 ">
       <CardHeader className="p-0">
@@ -89,7 +103,10 @@ function DashboardSettings({ id }: { id: string }) {
               <div className="grid gap-4 py-4">
                 <div className="flex flex-wrap items-center gap-2 border px-2 py-2 rounded min-h-[48px]">
                   {emails.map((email, index) => (
-                    <div key={index} className="bg-gray-100 text-sm px-3 py-1 rounded-full flex items-center">
+                    <div
+                      key={index}
+                      className="bg-gray-100 text-sm px-3 py-1 rounded-full flex items-center"
+                    >
                       {email}
                       <button
                         onClick={() => setEmails(emails.filter((_, i) => i !== index))}
@@ -105,18 +122,18 @@ function DashboardSettings({ id }: { id: string }) {
                     value={currentEmailInput}
                     onChange={(e) => setCurrentEmailInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === ",") {
+                      if (e.key === 'Enter' || e.key === ',') {
                         e.preventDefault();
-                        const trimmed = currentEmailInput.trim().replace(/,+$/, "");
+                        const trimmed = currentEmailInput.trim().replace(/,+$/, '');
                         if (
                           trimmed &&
                           /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed) &&
                           !emails.includes(trimmed)
                         ) {
                           setEmails([...emails, trimmed]);
-                          setCurrentEmailInput("");
+                          setCurrentEmailInput('');
                         } else if (trimmed) {
-                          toast.error("Invalid or duplicate email");
+                          toast.error('Invalid or duplicate email');
                         }
                       }
                     }}
@@ -126,14 +143,17 @@ function DashboardSettings({ id }: { id: string }) {
               {inviteLinks.length > 0 && (
                 <div className="mt-2 flex flex-col gap-2">
                   {inviteLinks.map((link, idx) => (
-                    <div key={idx} className="bg-gray-100 p-2 rounded flex items-center justify-between">
+                    <div
+                      key={idx}
+                      className="bg-gray-100 p-2 rounded flex items-center justify-between"
+                    >
                       <span className="text-sm break-all">{link}</span>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => {
                           navigator.clipboard.writeText(link);
-                          toast.success("Copied to clipboard");
+                          toast.success('Copied to clipboard');
                         }}
                       >
                         <Copy className="h-4 w-4" />
@@ -145,7 +165,7 @@ function DashboardSettings({ id }: { id: string }) {
               <DialogFooter>
                 <Button variant="outline">Cancel</Button>
                 <Button onClick={() => handleAddCollaborator()} disabled={isSendingInvite}>
-                  {isSendingInvite ? "Sending..." : "Send Invite Link"}
+                  {isSendingInvite ? 'Sending...' : 'Send Invite Link'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -157,7 +177,7 @@ function DashboardSettings({ id }: { id: string }) {
         {contributors?.contributors?.map((member) => (
           <div key={member.name} className="flex items-center gap-4 p-4 border-b last:border-b-0">
             <Avatar>
-              <AvatarImage src={member.user.image || ""} alt="User" />
+              <AvatarImage src={member.user.image || ''} alt="User" />
               <AvatarFallback className="text-xs">{member.email[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">

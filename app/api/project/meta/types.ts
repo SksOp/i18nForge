@@ -1,5 +1,5 @@
 export interface MetaOperationRequest {
-  operation: "commit" | "pr";
+  operation: 'commit' | 'pr';
   owner: string;
   repo: string;
   branch?: string;

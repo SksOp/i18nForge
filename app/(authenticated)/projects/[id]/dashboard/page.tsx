@@ -1,14 +1,16 @@
-"use client";
+'use client';
 
-import DashboardSettings from "@/components/dashboard-settings";
-import DeleteProject from "@/components/deleteProject";
-import Spinner from "@/components/spinner";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import Layout from "@/layout/layout";
-import { projectQuery } from "@/state/query/project";
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
-import React from "react";
+import { useParams } from 'next/navigation';
+import React from 'react';
+
+import Layout from '@/layout/layout';
+import { projectQuery } from '@/state/query/project';
+import { useQuery } from '@tanstack/react-query';
+
+import DashboardSettings from '@/components/dashboard-settings';
+import DeleteProject from '@/components/deleteProject';
+import Spinner from '@/components/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function DashboardPage() {
   const params = useParams();

@@ -1,6 +1,7 @@
-"use client";
-import React from "react";
-import { SessionProvider } from "next-auth/react";
+'use client';
+
+import { SessionProvider } from 'next-auth/react';
+import React from 'react';
 
 export const ClientLayout = ({ children }: { children: React.ReactNode }) => {
   return (

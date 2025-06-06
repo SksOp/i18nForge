@@ -1,6 +1,6 @@
 export const emailTemplate = (projectName: string, colabLink: string, senderName: string) => {
-    const year = new Date().getFullYear();
-    return `
+  const year = new Date().getFullYear();
+  return `
   <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -157,4 +157,4 @@ export const emailTemplate = (projectName: string, colabLink: string, senderName
 </body>
 </html>
     `;
-}
+};

@@ -1,19 +1,12 @@
-import {
-  TranslationEntry,
-  TranslationFile,
-  TranslationFiles,
-} from "@/types/translations";
+import { TranslationEntry, TranslationFile, TranslationFiles } from '@/types/translations';
 
-function flattenTranslations(
-  obj: Record<string, any>,
-  prefix = ""
-): Record<string, string> {
+function flattenTranslations(obj: Record<string, any>, prefix = ''): Record<string, string> {
   let result: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     const newKey = prefix ? `${prefix}.${key}` : key;
 
-    if (value && typeof value === "object" && !Array.isArray(value)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
       Object.assign(result, flattenTranslations(value, newKey));
     } else {
       // Leaf node - save the string value
@@ -44,20 +37,18 @@ export function createTableData(files: TranslationFiles): TranslationEntry[] {
 
     fileNames.forEach((fileName) => {
       const flattened = flattenTranslations(files[fileName]);
-      entry[fileName] = flattened[key] || "";
+      entry[fileName] = flattened[key] || '';
     });
 
     return entry;
   });
 }
 
-export function unflattenTranslations(
-  flatObj: Record<string, string>
-): TranslationFile {
+export function unflattenTranslations(flatObj: Record<string, string>): TranslationFile {
   const result: TranslationFile = {};
 
   for (const flatKey in flatObj) {
-    const keys = flatKey.split(".");
+    const keys = flatKey.split('.');
     let current: any = result;
 
     keys.forEach((key, index) => {
@@ -75,14 +66,12 @@ export function unflattenTranslations(
   return result;
 }
 
-export function recreateTranslationFiles(
-  tableData: TranslationEntry[]
-): TranslationFiles {
+export function recreateTranslationFiles(tableData: TranslationEntry[]): TranslationFiles {
   const result: TranslationFiles = {};
 
   if (tableData.length === 0) return result;
 
-  const fileNames = Object.keys(tableData[0]).filter((key) => key !== "key");
+  const fileNames = Object.keys(tableData[0]).filter((key) => key !== 'key');
 
   fileNames.forEach((fileName) => {
     const flatMap: Record<string, string> = {};

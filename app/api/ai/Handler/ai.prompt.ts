@@ -1,5 +1,5 @@
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { SystemMessagePromptTemplate, HumanMessagePromptTemplate } from "@langchain/core/prompts";
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { HumanMessagePromptTemplate, SystemMessagePromptTemplate } from '@langchain/core/prompts';
 
 export const i18nForgePrompt = `
 ** i18n Translation Specialist Protocol**

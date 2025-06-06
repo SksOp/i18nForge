@@ -1,5 +1,6 @@
-import React from "react";
-import styled from "styled-components";
+import React from 'react';
+
+import styled from 'styled-components';
 
 const Spinner = () => {
   return (
@@ -43,7 +44,7 @@ const StyledWrapper = styled.div`
   }
 
   .dot-spinner__dot::before {
-    content: "";
+    content: '';
     height: 20%;
     width: 20%;
     border-radius: 50%;

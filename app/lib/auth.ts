@@ -1,11 +1,12 @@
-import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/auth";
+import { getServerSession } from 'next-auth';
+import { NextRequest } from 'next/server';
+
+import { authOptions } from '../api/auth/[...nextauth]/auth';
 
 export async function getAuthenticatedUser(request: NextRequest) {
-  const userId = request.headers.get("x-user-id");
-  const userEmail = request.headers.get("x-user-email");
-  const userAccessToken = request.headers.get("x-user-accessToken");
+  const userId = request.headers.get('x-user-id');
+  const userEmail = request.headers.get('x-user-email');
+  const userAccessToken = request.headers.get('x-user-accessToken');
   if (!userId || !userEmail) {
     return null;
   }
@@ -20,7 +21,7 @@ export async function getAuthenticatedUser(request: NextRequest) {
 export async function requireAuth(request: NextRequest) {
   const user = await getAuthenticatedUser(request);
   if (!user) {
-    throw new Error("Authentication required");
+    throw new Error('Authentication required');
   }
   return user;
 }

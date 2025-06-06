@@ -1,12 +1,14 @@
-"use client";
+'use client';
 
-import { useQuery } from "@tanstack/react-query";
-import { useParams, useRouter } from "next/navigation";
-import { Loader, Edit } from "lucide-react";
-import { getFileContent, projectQuery } from "@/state/query/project";
-import TranslationsPage from "@/components/translation";
-import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useSession } from 'next-auth/react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { getFileContent, projectQuery } from '@/state/query/project';
+import { useQuery } from '@tanstack/react-query';
+import { Edit, Loader } from 'lucide-react';
+
+import TranslationsPage from '@/components/translation';
 
 export default function ProjectPage() {
   const params = useParams();
@@ -14,7 +16,7 @@ export default function ProjectPage() {
   const { data: project, isLoading, error } = useQuery(projectQuery(params.id as string));
   const { data: session } = useSession();
   const { data: fileContent, isLoading: fileContentLoading } = useQuery(
-    getFileContent(params.id as string, session?.accessToken || "")
+    getFileContent(params.id as string, session?.accessToken || ''),
   );
   const [dataForTable, setDataForTable] = useState<Record<string, any>>({});
 
@@ -24,9 +26,9 @@ export default function ProjectPage() {
       project?.paths.forEach((path, index) => {
         try {
           const content = fileContent.fileContent[index].content;
-          if (typeof content === "object") {
+          if (typeof content === 'object') {
             table[path.language] = content;
-          } else if (typeof content === "string") {
+          } else if (typeof content === 'string') {
             table[path.language] = JSON.parse(content);
           }
         } catch (error) {
@@ -36,7 +38,7 @@ export default function ProjectPage() {
 
       setDataForTable(table);
     }
-    console.log("dataForTable", JSON.stringify(table, null, 2));
+    console.log('dataForTable', JSON.stringify(table, null, 2));
   }, [fileContent, project]);
 
   if (isLoading || fileContentLoading) {
@@ -49,7 +51,11 @@ export default function ProjectPage() {
 
   return (
     <div>
-      <TranslationsPage files={dataForTable} userName={project?.owner ?? " "} repoName={project?.repoName ?? " "} />
+      <TranslationsPage
+        files={dataForTable}
+        userName={project?.owner ?? ' '}
+        repoName={project?.repoName ?? ' '}
+      />
     </div>
   );
 }

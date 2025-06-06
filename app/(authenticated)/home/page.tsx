@@ -1,14 +1,16 @@
-"use client";
-import React, { useEffect } from "react";
+'use client';
 
-import Layout from "@/layout/layout";
-import { projectsQuery } from "@/state/query/project";
-import { useRouter } from "next/navigation";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Github, Plus, User } from "lucide-react";
-import { format } from "date-fns";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
+
+import Layout from '@/layout/layout';
+import { projectsQuery } from '@/state/query/project';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { Github, Plus, User } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
   const { data: projects } = useSuspenseQuery(projectsQuery());
@@ -16,7 +18,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!projects || projects.length === 0 || projects.length === undefined) {
-      router.push("/new");
+      router.push('/new');
     }
   }, [projects]);
 
@@ -26,7 +28,7 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold">Your Projects</h1>
         <Link href="/new">
           <Button>
-            {" "}
+            {' '}
             <Plus />
             Add New Project
           </Button>
@@ -45,7 +47,7 @@ export default function HomePage() {
           {projects.map((project) => {
             const githubRepoUrl = `https://github.com/${project.name}`;
             const githubProfileUrl = `https://github.com/${project.owner}`;
-            const createdAtFormatted = format(new Date(project.createdAt), "PPP");
+            const createdAtFormatted = format(new Date(project.createdAt), 'PPP');
 
             return (
               <div
@@ -73,7 +75,9 @@ export default function HomePage() {
                   <span>{project.owner}</span>
                 </Link>
 
-                <p className="text-xs text-muted-foreground mt-2">Created on: {createdAtFormatted}</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Created on: {createdAtFormatted}
+                </p>
               </div>
             );
           })}

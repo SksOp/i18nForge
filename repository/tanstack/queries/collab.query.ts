@@ -1,7 +1,7 @@
-import { fetchContributions } from "@/repository/resources/collab.api";
+import { fetchContributions } from '@/repository/resources/collab.api';
 
 export const getContributorsQuery = (projectId: string) => ({
-  queryKey: ["contributors", projectId],
+  queryKey: ['contributors', projectId],
   queryFn: async () => {
     const resp = await fetchContributions(projectId);
     return resp;

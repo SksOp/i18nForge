@@ -1,18 +1,15 @@
-import { NextResponse } from "next/server";
-import {
-  getAllOrgInstallations,
-  getUserOrgs,
-  getUserSelfInstallation,
-} from "../utils";
-import { authOptions } from "../../auth/[...nextauth]/auth";
-import { getServerSession } from "next-auth";
-import { mapInstallation } from "./utils";
-import { GetGitHubAccessTokenViaApp } from "../../global.utils";
+import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
+
+import { authOptions } from '../../auth/[...nextauth]/auth';
+import { GetGitHubAccessTokenViaApp } from '../../global.utils';
+import { getAllOrgInstallations, getUserOrgs, getUserSelfInstallation } from '../utils';
+import { mapInstallation } from './utils';
 
 export type Installation = {
   id: string;
   installationId: string;
-  type: "Organization" | "User";
+  type: 'Organization' | 'User';
   name: string;
 };
 
@@ -22,12 +19,10 @@ export async function GET() {
     // console.log(session);
 
     if (!session?.accessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgs = await getUserOrgs(
-      await GetGitHubAccessTokenViaApp(session.githubId)
-    );
+    const orgs = await getUserOrgs(await GetGitHubAccessTokenViaApp(session.githubId));
     // console.log(session);
     const installations = await getAllOrgInstallations(orgs);
     const userInstallation = await getUserSelfInstallation(session.githubId);
@@ -35,13 +30,10 @@ export async function GET() {
     return NextResponse.json(
       [userInstallation, ...installations]
         .filter((installation) => installation !== null)
-        .map(mapInstallation)
+        .map(mapInstallation),
     );
   } catch (error) {
-    console.error("Error fetching installations:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('Error fetching installations:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
