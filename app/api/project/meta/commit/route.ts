@@ -4,16 +4,16 @@ import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import { FileContentForCommit } from "../meta.utils";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { GetGitHubAccessTokenViaApp } from "@/app/api/global.utils";
 
 export async function POST(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const session = await getServerSession(authOptions);
-
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
+    const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
     const id = searchParams.get("id");
     const message = searchParams.get("message");
     if (!id || !message) {
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       }
     );
     const result = await MetaAPI.commitContent(
-      session.accessToken,
+      accessToken,
       project.owner,
       project.repoName,
       branch,

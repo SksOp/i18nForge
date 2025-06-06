@@ -5,6 +5,7 @@ import { getOrgRepos, getUserRepos } from "../../utils";
 import { type NextRequest } from "next/server";
 import prisma from "@/lib/prisma";
 import { GitHubRepo } from "../../types";
+import { GetGitHubAccessTokenViaApp } from "@/app/api/global.utils";
 
 export type Repository = {
   id: number;
@@ -71,13 +72,13 @@ export async function GET(request: NextRequest, data: { params: Params }) {
           per_page,
           search,
         },
-        session.accessToken
+        await GetGitHubAccessTokenViaApp(session.githubId)
       );
     } else {
       repositories = await getOrgRepos(
         installation.githubName,
         { page, per_page, search },
-        session.accessToken
+        await GetGitHubAccessTokenViaApp(session.githubId)
       );
     }
 

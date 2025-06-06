@@ -9,6 +9,7 @@ import {
   CommitResponse,
   PullRequestResponse,
 } from "./types";
+import { GetGitHubAccessTokenViaApp } from "@/app/api/global.utils";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     if (!session) {
       return new Response("Session not found", { status: 401 });
     }
-    const accessToken = session.accessToken;
+    const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
     if (!accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

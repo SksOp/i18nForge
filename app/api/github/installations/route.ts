@@ -7,6 +7,7 @@ import {
 import { authOptions } from "../../auth/[...nextauth]/auth";
 import { getServerSession } from "next-auth";
 import { mapInstallation } from "./utils";
+import { GetGitHubAccessTokenViaApp } from "../../global.utils";
 
 export type Installation = {
   id: string;
@@ -24,7 +25,9 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const orgs = await getUserOrgs(session.accessToken);
+    const orgs = await getUserOrgs(
+      await GetGitHubAccessTokenViaApp(session.githubId)
+    );
     // console.log(session);
     const installations = await getAllOrgInstallations(orgs);
     const userInstallation = await getUserSelfInstallation(session.githubId);

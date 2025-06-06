@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getOwnerAndRepo } from "../meta.comman";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { GetGitHubAccessTokenViaApp } from "@/app/api/global.utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = session.accessToken;
+    const token = await GetGitHubAccessTokenViaApp(session.githubId);
     const repo = request.nextUrl.searchParams.get("repo");
     const userName = request.nextUrl.searchParams.get("userName");
     if (!repo || repo === "" || userName === null || token === null) {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const token = session.accessToken;
+    const token = await GetGitHubAccessTokenViaApp(session.githubId);
     const branch = searchParams.get("branch");
     const id = searchParams.get("id");
     if (!token || !id || id === "" || branch === null) {
@@ -77,7 +78,7 @@ export async function PUT(request: NextRequest) {
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const token = session.accessToken;
+    const token = await GetGitHubAccessTokenViaApp(session.githubId);
     const branch = searchParams.get("branch");
     const id = searchParams.get("id");
     if (!token || !id || id === "" || branch === null) {

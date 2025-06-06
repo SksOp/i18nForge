@@ -1,6 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
-import { AccessTokenResponse, GitHubAppConfig, JWTPayload } from './types';
+import { AccessTokenResponse, GitHubAppConfig, JWTPayload } from './project/meta/types';
+import prisma from '@/lib/prisma';
 
 class GitHubTokenGenerator {
     private config: GitHubAppConfig;
@@ -8,20 +9,47 @@ class GitHubTokenGenerator {
     private tokenExpirationTime: Date | null = null;
     private privateKey: string;
     private appId: string;
+    private readonly GITHUB_API_URL = 'https://api.github.com';
+
     constructor(config: GitHubAppConfig) {
-        this.config = config;
-        this.validateConfig();
         this.privateKey = process.env.GITHUB_APP_PRIVATE_KEY!;
         this.appId = process.env.GITHUB_APP_ID!;
+        this.config = config;
+        this.validateConfig();
     }
 
     private validateConfig(): void {
-        const { installationId: installationId, githubId: githubId } = this.config;
+        const { installationId, githubId } = this.config;
         if (!this.privateKey || !this.appId || !installationId || !githubId) {
             throw new Error('Missing required GitHub App configuration parameters');
         }
         if (!this.privateKey.includes('BEGIN') || !this.privateKey.includes('PRIVATE KEY')) {
             throw new Error('Invalid private key format. Expected PEM format.');
+        }
+    }
+
+    private async validateInstallation(): Promise<void> {
+        try {
+            const jwtToken = this.generateJWT();
+            const response = await fetch(`${this.GITHUB_API_URL}/app/installations/${this.config.installationId}`, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`,
+                    'Accept': 'application/vnd.github+json',
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('GitHub App installation not found. Please ensure the app is installed in your repository.');
+                }
+                if (response.status === 403) {
+                    throw new Error('GitHub App installation access denied. Please check app permissions.');
+                }
+                throw new Error(`Failed to validate installation: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            throw new Error(`Installation validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 
@@ -40,7 +68,7 @@ class GitHubTokenGenerator {
     }
 
     private async fetchInstallationToken(jwtToken: string): Promise<AccessTokenResponse> {
-        const url = `https://api.github.com/app/installations/${this.config.installationId}/access_tokens`;
+        const url = `${this.GITHUB_API_URL}/app/installations/${this.config.installationId}/access_tokens`;
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -53,6 +81,12 @@ class GitHubTokenGenerator {
 
         if (!response.ok) {
             const errorBody = await response.text();
+            if (response.status === 404) {
+                throw new Error('GitHub App installation not found. Please ensure the app is installed in your repository.');
+            }
+            if (response.status === 403) {
+                throw new Error('GitHub App installation access denied. Please check app permissions.');
+            }
             throw new Error(`Failed to fetch installation token: ${response.status} ${response.statusText} - ${errorBody}`);
         }
         return response.json() as Promise<AccessTokenResponse>;
@@ -68,6 +102,7 @@ class GitHubTokenGenerator {
 
     private async generateFreshToken(): Promise<string> {
         try {
+            await this.validateInstallation();
             const jwtToken = this.generateJWT();
             const tokenResponse = await this.fetchInstallationToken(jwtToken);
 
@@ -108,11 +143,28 @@ class GitHubTokenGenerator {
     }
 }
 
-export async function getAccessToken(installationId: string, githubId: string) {
-    const tokenGenerator = new GitHubTokenGenerator({
-        installationId: installationId,
-        githubId: githubId
-    });
-    const accessToken = await tokenGenerator.getAccessToken();
+export async function GetGitHubAccessTokenViaApp(githubId: string): Promise<string> {
+    try {
+        const installationDetails = await prisma.installation.findUnique({
+            where: {
+                githubId: githubId
+            }
+        });
+
+        if (!installationDetails) {
+            throw new Error("GitHub App installation not found. Please ensure the app is installed in your repository.");
+        }
+
+        const tokenGenerator = new GitHubTokenGenerator({
+            installationId: installationDetails.installationId,
+            githubId: githubId
+        });
+
+        const data = await tokenGenerator.getAccessToken();
+        console.log("data", data);
+        return data;
+    } catch (error) {
+        throw new Error(`Failed to get GitHub access token: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 }
 

@@ -1,4 +1,5 @@
 import { useSession } from "next-auth/react";
+import { GetGitHubAccessTokenViaApp } from "../global.utils";
 
 
 // REF: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#get-a-repository
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     if (!session) {
         return new Response("Unauthorized", { status: 401 });
     }
-    const accessToken = session.accessToken;
+    const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
     const response = await fetch("https://api.github.com/repos/OWNER/REPO", {
         headers: {
             Authorization: `Bearer ${accessToken}`,

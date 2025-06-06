@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MetaAPI } from "../meta.expose";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { GetGitHubAccessTokenViaApp } from "@/app/api/global.utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const accessToken = session.accessToken;
+    const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
     if (!accessToken || !owner || !repo || !branch) {
       return NextResponse.json(
         { error: "Missing required parameters" },

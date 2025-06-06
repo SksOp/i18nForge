@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { GetGitHubAccessTokenViaApp } from "@/app/api/global.utils";
 
 // REF: https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#get-a-repository
 /*
@@ -19,11 +20,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
     const response = await fetch(
       "https://api.github.com/user/repos?sort=updated&per_page=100",
       {
         headers: {
-          Authorization: `Bearer ${session.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
         },
