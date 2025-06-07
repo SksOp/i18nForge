@@ -19,6 +19,7 @@ interface BuildTranslationColumnsParams {
   commitEdit: () => void;
   setEditValue: (val: string) => void;
   handleAI: (key: string, translations: Record<string, string>, lang: string) => void;
+  handleUndo: (key: string, language: string) => void; 
 }
 
 export function buildTranslationColumns({
@@ -32,6 +33,7 @@ export function buildTranslationColumns({
   commitEdit,
   setEditValue,
   handleAI,
+  handleUndo
 }: BuildTranslationColumnsParams): ColumnDef<TranslationEntry>[] {
   return [
     {
@@ -63,48 +65,84 @@ export function buildTranslationColumns({
           handleAI(key, translations, lang);
         };
 
-        return (
-          <div className="flex items-center gap-2">
-            <div
-              className={cn(
-                "p-2 truncate cursor-pointer flex-1",
-                isEdited && "bg-yellow-100",
-                isProcessing && "opacity-50"
-              )}
-              onClick={() => handleCellClick(key, lang, value)}
-            >
-              {isEditing ? (
-                <Textarea
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  onBlur={commitEdit}
-                  autoFocus
-                />
-              ) : (
-                <span className="line-clamp-2">{value || "-"}</span>
-              )}
-            </div>
+     return (
+  <div
+    className={cn(
+      "relative flex items-center gap-2 group", // group enables hover effects for child
+      isEdited && "bg-yellow-50"
+    )}
+  >
+    {/* Green vertical line for modified cells */}
+    {isEdited && (
+      <div
+        className="absolute left-0 top-0 h-full w-1 bg-green-500 rounded-r-md"
+        title="Modified"
+      />
+    )}
 
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={isAIProcessing}
-              className={cn(
-                "h-8 w-8",
-                isProcessing && "bg-blue-50",
-                isAIProcessing && "cursor-not-allowed"
-              )}
-              onClick={handleAIClick}
-              title={isAIProcessing ? "AI Translation in progress..." : "AI Translate"}
-            >
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-              ) : (
-                <Wand2 className={cn("h-4 w-4", isAIProcessing && "opacity-50")} />
-              )}
-            </Button>
-          </div>
-        );
+    {/* Main cell content */}
+    <div
+      className={cn(
+        "flex-1 p-2 truncate cursor-pointer",
+        isProcessing && "opacity-50"
+      )}
+      onClick={() => handleCellClick(key, lang, value)}
+    >
+      {isEditing ? (
+        <Textarea
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={commitEdit}
+          autoFocus
+        />
+      ) : (
+        <span className="line-clamp-2">{value || "-"}</span>
+      )}
+    </div>
+
+    {/* AI Translate button only when editing */}
+    {isEditing && (
+      <Button
+        variant="ghost"
+        size="icon"
+        disabled={isAIProcessing}
+        className={cn(
+          "h-8 w-8",
+          isProcessing && "bg-blue-50",
+          isAIProcessing && "cursor-not-allowed"
+        )}
+        onClick={handleAIClick}
+        title={isAIProcessing ? "AI Translation in progress..." : "AI Translate"}
+      >
+        {isProcessing ? (
+          <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+        ) : (
+          <Wand2 className={cn("h-4 w-4", isAIProcessing && "opacity-50")} />
+        )}
+      </Button>
+    )}
+
+    {/* Undo button shown only on hover of edited cells */}
+    {isEdited && !isEditing && (
+      <div
+        className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1"
+        title="Modified"
+      >
+        <Button
+  size="sm"
+  variant="outline"
+  className="text-xs px-2 py-1 h-auto"
+  onClick={() => handleUndo(key, lang)}
+>
+  Undo
+</Button>
+
+      </div>
+    )}
+  </div>
+);
+
+
       },
     })),
   ];

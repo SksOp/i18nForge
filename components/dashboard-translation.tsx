@@ -61,25 +61,59 @@ function DashboardTranslation({ id }: { id: string }) {
   }
 
 
-  const getEditedValue = (key: string, lang: string) => editedValues[key]?.[lang];
-  const isCellEdited = (key: string, lang: string) => getEditedValue(key, lang) !== undefined;
+  const getEditedValue = (key: string, lang: string) => {
+  const found = editedValues.find((v) => v.key === key && v.language === lang);
+  return found?.newValue;
+};
+
+const isCellEdited = (key: string, lang: string) => {
+  return editedValues.some((v) => v.key === key && v.language === lang);
+};
+
+const handleUndo = (key: string, lang: string) => {
+  setEditedValues((prev) =>
+    prev.filter((v) => !(v.key === key && v.language === lang))
+  );
+};
+
 
   const handleCellClick = (key: string, lang: string, value: string) => {
+    if (editingCell?.key === key && editingCell?.language === lang) return;
     setEditingCell({ key, language: lang });
     setEditValue(value);
   };
 
   
 
-  const commitEdit = () => {
-    if (!editingCell) return;
-    const { key, language } = editingCell;
-    setEditedValues((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], [language]: editValue },
-    }));
-    setEditingCell(null);
-  };
+const commitEdit = () => {
+  if (!editingCell) return;
+  const { key, language } = editingCell;
+
+  const originalValue =
+    dataForTable.find((entry) => entry.key === key)?.[language] ?? "";
+
+  if (editValue.trim() !== originalValue?.trim()) {
+    setEditedValues((prev) => {
+      const existingIndex = prev.findIndex(
+        (v) => v.key === key && v.language === language
+      );
+      const updated: EditedValue = {
+        key,
+        language,
+        newValue: editValue.trim(),
+        originalValue: originalValue.trim(),
+      };
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        next[existingIndex] = updated;
+        return next;
+      }
+      return [...prev, updated];
+    });
+  }
+
+  setEditingCell(null);
+};
 
 
 
@@ -134,6 +168,7 @@ function DashboardTranslation({ id }: { id: string }) {
     commitEdit,
     setEditValue,
     handleAI,
+    handleUndo
   });
 
   return (
@@ -143,7 +178,7 @@ function DashboardTranslation({ id }: { id: string }) {
           <h2 className="text-2xl font-bold tracking-tight">Welcome back!</h2>
           <p className="text-muted-foreground">Here&apos;s a list of your translation!</p>
         </div>
-        <div></div>
+        <div className="flex gap-2"></div>
       </div>
       <TranslationDataTable data={dataForTable} columns={columns} />
     </div>
