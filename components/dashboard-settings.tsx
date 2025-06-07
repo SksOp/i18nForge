@@ -85,6 +85,7 @@ function DashboardSettings({ id }: { id: string }) {
     );
   if (isError) return <p>Failed to load contributors.</p>;
   console.log('contributors', contributors);
+  
   return (
     <Card className="w-full p-4 flex flex-col gap-4 ">
       <CardHeader className="p-0">

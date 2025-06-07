@@ -92,6 +92,7 @@ export default function TranslationsPage({
       handleBranchChange(defaultBranch);
     }
   }, [branchData]);
+
   const handleBranchChange = async (value: string) => {
     const loadingToast = toast.loading('Checking branch...');
     if (!id) return;
@@ -176,7 +177,6 @@ export default function TranslationsPage({
         return;
       }
     });
-    });
     setIsSendingInvite(true);
     try {
       const res = await fetch(`/api/contributor/invite`, {
@@ -199,7 +199,6 @@ export default function TranslationsPage({
       setIsSendingInvite(false);
       setIsSendingInvite(false);
     }
-  };
   };
 
   const handleCreateBranch = async () => {
@@ -231,7 +230,7 @@ export default function TranslationsPage({
     setIsDialogOpen(false);
     setBranchName('');
   };
-  console.log('dataForTable', JSON.stringify(tableData, null, 2));
+  
   return (
     <Layout className="gap-6">
       {/* Header Section */}
