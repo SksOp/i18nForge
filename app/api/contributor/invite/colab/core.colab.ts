@@ -25,7 +25,7 @@ export class ColabService {
       Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
     );
   }
-  public async inviteCollaborator(projectId: string, emailsString: string, senderName: string) {
+  public async inviteCollaborator(projectId: string, emailsString: string[], senderName: string) {
     const project = await rawPrisma.project.findUnique({
       where: { id: projectId },
       include: { user: true },
@@ -39,12 +39,12 @@ export class ColabService {
     const results = [];
     const failedEmails: Record<string, string> = {};
     const successEmails: Record<string, string> = {};
-    const emails = emailsString.split(',').map((email) => email.trim());
+    // const emails = emailsString.split(",").map((email) => email.trim());
     await rawPrisma.$transaction(
       async (tx) => {
-        for (const email of emails) {
+        for (const email of emailsString) {
           if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-            failedEmails[email] = 'Invalid email';
+            failedEmails[email] = "Invalid email";
             continue;
           }
 
@@ -66,16 +66,16 @@ export class ColabService {
               email,
               colabLink,
               expiresAt,
-              status: 'pending',
+              status: "pending",
             },
           });
           results.push(contributor);
-          successEmails[email] = 'Invite sent';
+          successEmails[email] = "Invite sent";
         }
       },
       {
         timeout: this.transactionTimeout, // 10 second timeout
-      },
+      }
     );
 
     for (const contributor of results) {
@@ -152,7 +152,6 @@ export class ColabService {
   public async getContributors(projectId: string) {
     const contributors = await rawPrisma.contributorToProject.findMany({
       where: { projectId },
-      include: { user: true },
     });
 
     return {

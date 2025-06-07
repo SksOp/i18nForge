@@ -176,6 +176,7 @@ export default function TranslationsPage({
         return;
       }
     });
+    });
     setIsSendingInvite(true);
     try {
       const res = await fetch(`/api/contributor/invite`, {
@@ -196,7 +197,9 @@ export default function TranslationsPage({
       toast.error('Failed to send invite link');
     } finally {
       setIsSendingInvite(false);
+      setIsSendingInvite(false);
     }
+  };
   };
 
   const handleCreateBranch = async () => {
@@ -308,6 +311,7 @@ export default function TranslationsPage({
                     />
                     {inviteLink && (
                       <div className="flex items-center gap-2">
+                        <Input value={inviteLink} readOnly />
                         <Input value={inviteLink} readOnly />
                         <Button
                           variant="outline"

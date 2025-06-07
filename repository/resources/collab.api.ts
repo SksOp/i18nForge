@@ -10,8 +10,8 @@ export const fetchContributions = async (projectId: string) => {
     if (!response.ok) {
       throw new Error('Failed to fetch contributions');
     }
-
-    return null;
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error fetching contributions:', error);
     throw error;

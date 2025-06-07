@@ -177,7 +177,7 @@ function DashboardSettings({ id }: { id: string }) {
         {contributors?.contributors?.map((member) => (
           <div key={member.name} className="flex items-center gap-4 p-4 border-b last:border-b-0">
             <Avatar>
-              <AvatarImage src={member.user.image || ''} alt="User" />
+              <AvatarImage src={"/placeholder"} alt="User" />
               <AvatarFallback className="text-xs">{member.email[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
