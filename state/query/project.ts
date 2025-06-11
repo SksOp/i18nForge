@@ -93,11 +93,11 @@ export const projectQuery = (projectId: string) => {
   });
 };
 
-export const getFileContent = (projectId: string, accessToken?: string) => {
+export const getFileContent = (projectId: string, accessToken?: string, branch?: string) => {
   return queryOptions({
-    queryKey: ['fileContent', projectId],
+    queryKey: ['fileContent', projectId, branch],
     queryFn: async () => {
-      const response = await fetch(`/api/project/meta/file?id=${projectId}`, {
+      const response = await fetch(`/api/project/meta/file?id=${projectId}&branch=${branch}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
