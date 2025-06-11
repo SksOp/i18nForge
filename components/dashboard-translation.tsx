@@ -1,10 +1,11 @@
 import { useSession } from 'next-auth/react';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { queryClient } from '@/state/client';
 import { getFileContent, projectQuery } from '@/state/query/project';
 import { TranslationEntry } from '@/types/translations';
 import { useQuery } from '@tanstack/react-query';
-import { Loader } from 'lucide-react';
+import { Loader, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { createTableData } from '@/utils/translation-utils';
@@ -12,6 +13,17 @@ import { createTableData } from '@/utils/translation-utils';
 import { BranchData } from './branchList';
 import TranslationDataTable from './translation-dataTable';
 import { buildTranslationColumns } from './translationTable-column';
+import { Button } from './ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
+import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface EditedValue {
@@ -30,6 +42,8 @@ function DashboardTranslation({ id }: { id: string }) {
   const [editedValues, setEditedValues] = useState<EditedValue[]>([]);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [fileNames, setFileNames] = useState<string[]>([]);
+  const [branchName, setBranchName] = useState('');
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false);
   const { data: fileContent, isLoading: fileContentLoading } = useQuery(
     getFileContent(id as string, session?.accessToken || '', selectedBranch || 'main'),
   );
@@ -209,6 +223,46 @@ function DashboardTranslation({ id }: { id: string }) {
     }
   };
 
+  const handleCreateBranch = async () => {
+    if (!branchName.trim()) {
+      toast.error('Branch name cannot be empty');
+      return;
+    }
+
+    setIsCreatingBranch(true);
+
+    try {
+      const res = await fetch(`/api/project/meta/branch?branch=${branchName}&id=${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-accessToken': session?.accessToken || '',
+        },
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err?.error || 'Branch creation failed');
+      }
+
+      toast.success('Branch created successfully');
+
+      queryClient.invalidateQueries({
+        queryKey: ['branches', project?.owner, project?.repoName],
+      });
+
+      await handleBranchChange(branchName);
+
+      // Reset branch name input
+      setBranchName('');
+    } catch (err: any) {
+      console.error('Branch creation error:', err);
+      toast.error(err.message || 'Failed to create branch');
+    } finally {
+      setIsCreatingBranch(false);
+    }
+  };
+
   const columns = buildTranslationColumns({
     fileNames,
     editingCell,
@@ -243,6 +297,37 @@ function DashboardTranslation({ id }: { id: string }) {
               ))}
             </SelectContent>
           </Select>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus /> Create Branch
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create a New Branch</DialogTitle>
+                <DialogDescription>
+                  Enter a new branch name to create it and switch to it immediately.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-4 py-4">
+                <Input
+                  placeholder="e.g. feature-login-i18n"
+                  value={branchName}
+                  onChange={(e) => setBranchName(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  disabled={!branchName || isCreatingBranch}
+                  onClick={handleCreateBranch}
+                >
+                  {isCreatingBranch ? 'Creating...' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       <TranslationDataTable data={dataForTable} columns={columns} />
