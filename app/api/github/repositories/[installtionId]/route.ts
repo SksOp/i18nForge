@@ -2,13 +2,23 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { type NextRequest } from 'next/server';
 
+
+
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 import { GetGitHubAccessTokenViaApp } from '@/app/api/global.utils';
 
+
+
 import prisma from '@/lib/prisma';
+
+
 
 import { GitHubRepo } from '../../types';
 import { getOrgRepos, getUserRepos } from '../../utils';
+
+
+
+
 
 export type Repository = {
   id: number;
@@ -72,13 +82,13 @@ export async function GET(request: NextRequest, data: { params: Params }) {
           per_page,
           search,
         },
-        await GetGitHubAccessTokenViaApp(session.githubId),
+        session.accessToken,
       );
     } else {
       repositories = await getOrgRepos(
         installation.githubName,
         { page, per_page, search },
-        await GetGitHubAccessTokenViaApp(session.githubId),
+        session.accessToken,
       );
     }
 
