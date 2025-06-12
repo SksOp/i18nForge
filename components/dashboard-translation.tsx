@@ -168,19 +168,19 @@ function DashboardTranslation({ id }: { id: string }) {
     setEditValue(value);
   };
 
-  const commitEdit = () => {
+  const commitEdit = (value: string) => {
     if (!editingCell) return;
     const { key, language } = editingCell;
 
     const originalValue = dataForTable.find((entry) => entry.key === key)?.[language] ?? '';
 
-    if (editValue.trim() !== originalValue?.trim()) {
+    if (value.trim() !== originalValue.trim()) {
       setEditedValues((prev) => {
         const existingIndex = prev.findIndex((v) => v.key === key && v.language === language);
         const updated: EditedValue = {
           key,
           language,
-          newValue: editValue.trim(),
+          newValue: value.trim(),
           originalValue: originalValue.trim(),
         };
         if (existingIndex >= 0) {
