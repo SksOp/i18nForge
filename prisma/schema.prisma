@@ -28,6 +28,7 @@ model User {
   SharedProjectRelation SharedProjectRelation[]
   ContributorToProject  ContributorToProject[]
   UserEmails            UserEmail[]
+
   @@map("users")
 }
 
@@ -45,20 +46,21 @@ model Installation {
 }
 
 model Project {
-  id                    String                  @id @default(uuid())
-  name                  String
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  owner                 String
-  ownerType             String
-  paths                 Json
-  userId                String
-  repoName              String                  @default("")
-  defaultBranch         String                  @default("")
+  id            String   @id @default(uuid())
+  name          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  owner         String
+  ownerType     String
+  paths         Json
+  userId        String
+  repoName      String   @default("")
+  defaultBranch String   @default("")
 
   user                  User                    @relation(fields: [userId], references: [id])
   SharedProjectRelation SharedProjectRelation[]
   ContributorToProject  ContributorToProject[]
+
   @@map("projects")
 }
 
@@ -71,7 +73,6 @@ model SharedProjectRelation {
 
   @@map("shared_project_relations")
 }
-
 
 model ContributorToProject {
   id        String   @id @default(uuid())
