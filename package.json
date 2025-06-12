@@ -60,6 +60,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^2.30.0",
+    "diff": "^8.0.2",
     "embla-carousel-react": "^8.5.2",
     "graphql": "^16.10.0",
     "graphql-request": "^7.1.2",

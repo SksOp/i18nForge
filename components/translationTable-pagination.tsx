@@ -1,18 +1,46 @@
-import { Table } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Table } from '@tanstack/react-table';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
+  editedValuesCount?: number;
 }
 
-export function DataTablePagination<TData>({ table }: DataTablePaginationProps<TData>) {
+interface EditedValue {
+  key: string;
+  language: string;
+  newValue: string;
+  originalValue: string;
+}
+
+interface ChangedFile {
+  path: string;
+  oldContent: string;
+  newContent: string;
+  language: string;
+}
+
+export function DataTablePagination<TData>({
+  table,
+  editedValuesCount = 0,
+}: DataTablePaginationProps<TData>) {
   return (
     <div className="flex items-center justify-between px-2">
       <div className="flex-1 text-sm text-muted-foreground">
-        {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
+        {editedValuesCount > 0 && (
+          <span className="text-amber-600 font-medium">
+            {editedValuesCount} change{editedValuesCount !== 1 ? 's' : ''} made
+          </span>
+        )}
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">

@@ -1,3 +1,5 @@
+'use client';
+
 import { useSession } from 'next-auth/react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -8,9 +10,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { createTableData } from '@/utils/translation-utils';
+import { getFileDiff } from '@/utils/computeFileDiffs';
+import { createTableData, unflattenTranslations } from '@/utils/translation-utils';
 
 import { BranchData } from './branchList';
+import TranslationCommitDiff from './translation-commitDiff';
 import TranslationDataTable from './translation-dataTable';
 import { buildTranslationColumns } from './translationTable-column';
 import { Button } from './ui/button';
@@ -32,6 +36,14 @@ interface EditedValue {
   newValue: string;
   originalValue: string;
 }
+
+interface ChangedFile {
+  path: string;
+  oldContent: string;
+  newContent: string;
+  language: string;
+}
+
 function DashboardTranslation({ id }: { id: string }) {
   const { data: project, isLoading, error } = useQuery(projectQuery(id as string));
   const { data: session } = useSession();
@@ -44,6 +56,10 @@ function DashboardTranslation({ id }: { id: string }) {
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [branchName, setBranchName] = useState('');
   const [isCreatingBranch, setIsCreatingBranch] = useState(false);
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [commitMessage, setCommitMessage] = useState('');
+  const [originalFileContents, setOriginalFileContents] = useState<Record<string, any>>({});
+  const [isCommitDialogOpen, setIsCommitDialogOpen] = useState(false);
   const { data: fileContent, isLoading: fileContentLoading } = useQuery(
     getFileContent(id as string, session?.accessToken || '', selectedBranch || 'main'),
   );
@@ -71,44 +87,67 @@ function DashboardTranslation({ id }: { id: string }) {
     enabled: !!project?.owner && !!project?.repoName,
   });
 
-  useEffect(() => {
-    const table: Record<string, any> = {};
-    if (fileContent?.fileContent) {
-      project?.paths.forEach((path, index) => {
+  const changedFiles = useMemo(() => {
+    if (!dataForTable.length || !fileNames.length || !editedValues.length) {
+      return [];
+    }
+
+    const changes: ChangedFile[] = [];
+
+    try {
+      // Build updated files with edits
+      const updatedFlatFiles: Record<string, Record<string, string>> = {};
+
+      fileNames.forEach((lang) => {
+        updatedFlatFiles[lang] = {};
+        dataForTable.forEach((entry) => {
+          const edited = editedValues.find((v) => v.key === entry.key && v.language === lang);
+          updatedFlatFiles[lang][entry.key] = edited?.newValue ?? entry[lang] ?? '';
+        });
+      });
+
+      // Compare with original and create changed files
+      fileNames.forEach((lang) => {
         try {
-          const content = fileContent.fileContent[index].content;
-          if (typeof content === 'object') {
-            table[path.language] = content;
-          } else if (typeof content === 'string') {
-            table[path.language] = JSON.parse(content);
+          if (!originalFileContents[lang]) return;
+
+          const newNested = unflattenTranslations(updatedFlatFiles[lang]);
+          const original = originalFileContents[lang];
+
+          const oldContent = JSON.stringify(original, null, 2);
+          const newContent = JSON.stringify(newNested, null, 2);
+
+          if (oldContent !== newContent) {
+            changes.push({
+              path: lang,
+              oldContent,
+              newContent,
+              language: lang,
+            });
           }
         } catch (error) {
-          console.error(`Error parsing content for ${path.language}:`, error);
+          console.error(`Error processing changes for ${lang}:`, error);
         }
       });
-      const fileNames = Object.keys(table);
-      setFileNames(fileNames);
-      const tableData = createTableData(table);
-      setDataForTable(tableData);
+    } catch (error) {
+      console.error('Error calculating changed files:', error);
+      return [];
     }
-    console.log('dataForTable', JSON.stringify(table, null, 2));
-  }, [fileContent, project, selectedBranch]);
 
-  useEffect(() => {
-    if (project?.branch) {
-      setSelectedBranch(project.branch);
-    } else {
-      setSelectedBranch('main');
-    }
-  }, [project]);
+    return changes;
+  }, [dataForTable, editedValues, fileNames, originalFileContents]);
 
-  if (isLoading || fileContentLoading || isBranchLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
+  const getChangedFilesWithOnlyLines = useMemo(() => {
+    return changedFiles.map((f) => {
+      const diffs = getFileDiff(f.oldContent, f.newContent);
+      const diffsOnly = diffs.flatMap((part) =>
+        part.added || part.removed
+          ? part.value.split('\n').map((v) => `${part.added ? '+' : '-'} ${v}`)
+          : [],
+      );
+      return { ...f, diffsOnly };
+    });
+  }, [changedFiles]);
 
   const getEditedValue = (key: string, lang: string) => {
     const found = editedValues.find((v) => v.key === key && v.language === lang);
@@ -196,6 +235,90 @@ function DashboardTranslation({ id }: { id: string }) {
     }
   };
 
+  const columns = useMemo(
+    () =>
+      buildTranslationColumns({
+        fileNames,
+        editingCell,
+        editValue,
+        isAIProcessing,
+        getEditedValue,
+        isCellEdited,
+        handleCellClick,
+        commitEdit,
+        setEditValue,
+        handleAI,
+        handleUndo,
+      }),
+    [
+      fileNames,
+      editingCell,
+      editValue,
+      isAIProcessing,
+      getEditedValue,
+      isCellEdited,
+      handleCellClick,
+      commitEdit,
+      setEditValue,
+      handleAI,
+      handleUndo,
+    ],
+  );
+
+  useEffect(() => {
+    const table: Record<string, any> = {};
+    if (fileContent?.fileContent) {
+      project?.paths.forEach((path, index) => {
+        try {
+          const content = fileContent.fileContent[index].content;
+          if (typeof content === 'object') {
+            table[path.language] = content;
+          } else if (typeof content === 'string') {
+            table[path.language] = JSON.parse(content);
+          }
+        } catch (error) {
+          console.error(`Error parsing content for ${path.language}:`, error);
+        }
+      });
+      const fileNames = Object.keys(table);
+      setFileNames(fileNames);
+      const tableData = createTableData(table);
+      setDataForTable(tableData);
+    }
+    console.log('dataForTable', JSON.stringify(table, null, 2));
+  }, [fileContent, project, selectedBranch]);
+
+  useEffect(() => {
+    if (fileContent?.fileContent) {
+      const orig: Record<string, any> = {};
+      project?.paths.forEach((path, idx) => {
+        try {
+          const cnt = fileContent.fileContent[idx].content;
+          orig[path.language] = typeof cnt === 'string' ? JSON.parse(cnt) : cnt;
+        } catch {
+          orig[path.language] = {};
+        }
+      });
+      setOriginalFileContents(orig);
+    }
+  }, [fileContent, project]);
+
+  useEffect(() => {
+    if (project?.branch) {
+      setSelectedBranch(project.branch);
+    } else {
+      setSelectedBranch('main');
+    }
+  }, [project]);
+
+  if (isLoading || fileContentLoading || isBranchLoading || isCommitting) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   const handleBranchChange = async (value: string) => {
     const loadingToast = toast.loading('Checking branch...');
     if (!id) return;
@@ -263,19 +386,55 @@ function DashboardTranslation({ id }: { id: string }) {
     }
   };
 
-  const columns = buildTranslationColumns({
-    fileNames,
-    editingCell,
-    editValue,
-    isAIProcessing,
-    getEditedValue,
-    isCellEdited,
-    handleCellClick,
-    commitEdit,
-    setEditValue,
-    handleAI,
-    handleUndo,
-  });
+  const handleCommit = async (msg: string, branch: string) => {
+    if (!id || changedFiles.length === 0) {
+      toast.info('No changes to commit.');
+      return;
+    }
+
+    try {
+      setIsCommitting(true);
+
+      // Prepare commit data
+      const commitData = {
+        branch: branch,
+        content: changedFiles.map((file) => ({
+          path: file.path,
+          content: file.newContent,
+        })),
+      };
+      const res = await fetch(`/api/project/meta/commit?id=${id}&message=${msg}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-accessToken': session?.accessToken || '',
+        },
+        body: JSON.stringify(commitData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData?.error || 'Failed to commit changes');
+      }
+
+      // Success - clean up state
+      queryClient.invalidateQueries({ queryKey: ['fileContent', id] });
+      setEditedValues([]);
+      setCommitMessage('');
+      setIsCommitDialogOpen(false);
+      toast.success('Changes committed successfully!');
+    } catch (err: any) {
+      console.error('Commit error:', err);
+      toast.error(err.message || 'Commit failed.');
+    } finally {
+      setIsCommitting(false);
+    }
+  };
+
+  const handleCancelCommit = () => {
+    setIsCommitDialogOpen(false);
+    setCommitMessage('');
+  };
 
   return (
     <div className=" h-full flex-1 flex-col space-y-8 p-8 flex">
@@ -285,18 +444,6 @@ function DashboardTranslation({ id }: { id: string }) {
           <p className="text-muted-foreground">Here&apos;s a list of your translation!</p>
         </div>
         <div className="flex gap-2">
-          <Select value={selectedBranch} onValueChange={handleBranchChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Checkout" />
-            </SelectTrigger>
-            <SelectContent className="">
-              {branchData?.branches.map((branch) => (
-                <SelectItem key={branch} value={branch}>
-                  {branch}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -328,9 +475,43 @@ function DashboardTranslation({ id }: { id: string }) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          <Select value={selectedBranch} onValueChange={handleBranchChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Checkout" />
+            </SelectTrigger>
+            <SelectContent className="">
+              {branchData?.branches.map((branch) => (
+                <SelectItem key={branch} value={branch}>
+                  {branch}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Dialog open={isCommitDialogOpen} onOpenChange={setIsCommitDialogOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={!editedValues.length}>
+                Commit {editedValues.length > 0 && `(${editedValues.length})`}
+              </Button>
+            </DialogTrigger>
+            <TranslationCommitDiff
+              changedFiles={getChangedFilesWithOnlyLines}
+              branches={branchData?.branches || []}
+              defaultBranch={selectedBranch || 'main'}
+              onCancel={handleCancelCommit}
+              onConfirm={(branch, message) => {
+                handleCommit(message, branch);
+              }}
+            />
+          </Dialog>
         </div>
       </div>
-      <TranslationDataTable data={dataForTable} columns={columns} />
+      <TranslationDataTable
+        data={dataForTable}
+        columns={columns}
+        editedValuesCount={editedValues.length}
+      />
     </div>
   );
 }

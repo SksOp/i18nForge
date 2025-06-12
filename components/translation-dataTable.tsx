@@ -26,9 +26,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  editedValuesCount?: number;
 }
 
-function TranslationDataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+function TranslationDataTable<TData, TValue>({
+  columns,
+  data,
+  editedValuesCount = 0,
+}: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -100,7 +105,7 @@ function TranslationDataTable<TData, TValue>({ columns, data }: DataTableProps<T
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} editedValuesCount={editedValuesCount} />
     </div>
   );
 }

@@ -70,6 +70,7 @@ export function buildTranslationColumns({
 
         return (
           <div
+            key={`${key}-${lang}`}
             className={cn(
               'relative flex items-center gap-2 group', // group enables hover effects for child
               isEdited && 'bg-yellow-50',
