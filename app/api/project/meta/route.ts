@@ -1,73 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
-import { MetaUtils } from "./meta.utils";
-import { useSession } from "next-auth/react";
-import prisma from "@/lib/prisma";
-import { authOptions } from "../../auth/[...nextauth]/auth";
-import { getServerSession } from "next-auth";
-import {
-  MetaOperationRequest,
-  CommitResponse,
-  PullRequestResponse,
-} from "./types";
+import { getServerSession } from 'next-auth';
+import { useSession } from 'next-auth/react';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { GetGitHubAccessTokenViaApp } from '@/app/api/global.utils';
+
+import { authOptions } from '../../auth/[...nextauth]/auth';
+import { MetaUtils } from './meta.utils';
+import { CommitResponse, MetaOperationRequest, PullRequestResponse } from './types';
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return new Response("Session not found", { status: 401 });
+      return new Response('Session not found', { status: 401 });
     }
-    const accessToken = session.accessToken;
+    const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
     if (!accessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = (await request.json()) as MetaOperationRequest;
-    const {
-      operation,
-      owner,
-      repo,
-      branch,
-      path,
-      content,
-      message,
-      title,
-      body: prBody,
-    } = body;
+    const { operation, owner, repo, branch, path, content, message, title, body: prBody } = body;
 
     if (!owner || !repo) {
-      return NextResponse.json(
-        { error: "Owner and repo are required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Owner and repo are required' }, { status: 400 });
     }
     if (!title || !prBody) {
       return NextResponse.json(
-        { error: "Title and body are required for pull request" },
-        { status: 400 }
+        { error: 'Title and body are required for pull request' },
+        { status: 400 },
       );
     }
     let result: CommitResponse | PullRequestResponse | null;
     switch (operation) {
-      case "commit":
+      case 'commit':
         if (!path || !content || !message) {
           return NextResponse.json(
-            { error: "Path, content, and message are required for commit" },
-            { status: 400 }
+            { error: 'Path, content, and message are required for commit' },
+            { status: 400 },
           );
         }
         const commitBranch = branch || `feature/${Date.now()}`;
-        const branchResult = await MetaUtils.createBranch(
-          accessToken,
-          owner,
-          repo,
-          commitBranch
-        );
+        const branchResult = await MetaUtils.createBranch(accessToken, owner, repo, commitBranch);
 
         if (!branchResult) {
-          return NextResponse.json(
-            { error: "Failed to create branch" },
-            { status: 500 }
-          );
+          return NextResponse.json({ error: 'Failed to create branch' }, { status: 500 });
         }
 
         result = (await MetaUtils.commitContent(
@@ -76,14 +53,11 @@ export async function POST(request: Request) {
           repo,
           commitBranch,
           [{ path, content }],
-          message
+          message,
         )) as CommitResponse;
 
         if (!result) {
-          return NextResponse.json(
-            { error: "Failed to commit content" },
-            { status: 500 }
-          );
+          return NextResponse.json({ error: 'Failed to commit content' }, { status: 500 });
         }
 
         result = (await MetaUtils.createPullRequest(
@@ -92,25 +66,19 @@ export async function POST(request: Request) {
           repo,
           commitBranch,
           title,
-          prBody
+          prBody,
         )) as PullRequestResponse;
         break;
 
       default:
-        return NextResponse.json(
-          { error: "Invalid operation" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid operation' }, { status: 400 });
     }
     if (!result) {
-      return NextResponse.json({ error: "Operation failed" }, { status: 500 });
+      return NextResponse.json({ error: 'Operation failed' }, { status: 500 });
     }
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error in meta operation:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('Error in meta operation:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

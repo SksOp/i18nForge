@@ -1,14 +1,15 @@
-import { Account, Profile, User } from "next-auth";
-import GithubProvider from "next-auth/providers/github";
-import { JWT } from "next-auth/jwt";
-import { Session } from "next-auth";
-import prisma from "@/lib/prisma";
+import { Account, Profile, User } from 'next-auth';
+import { Session } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
+import GithubProvider from 'next-auth/providers/github';
+
+import prisma from '@/lib/prisma';
 
 if (!process.env.GITHUB_OAUTH_ID || !process.env.GITHUB_OAUTH_SECRET) {
-  throw new Error("GITHUB_OAUTH_ID and GITHUB_OAUTH_SECRET must be set");
+  throw new Error('GITHUB_OAUTH_ID and GITHUB_OAUTH_SECRET must be set');
 }
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
     accessToken?: string;
     githubId: string;
@@ -19,7 +20,7 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   interface JWT {
     accessToken?: string;
     githubId: string;
@@ -37,21 +38,13 @@ export const authOptions = {
       clientSecret: process.env.GITHUB_OAUTH_SECRET,
       authorization: {
         params: {
-          scope: "read:user user:email read:org repo",
+          scope: 'read:user user:email read:org repo',
         },
       },
     }),
   ],
   callbacks: {
-    async signIn({
-      user,
-      account,
-      profile,
-    }: {
-      user: User;
-      account: Account;
-      profile: Profile;
-    }) {
+    async signIn({ user, account, profile }: { user: User; account: Account; profile: Profile }) {
       try {
         const existingUser = await prisma.user.findUnique({
           where: {
@@ -68,16 +61,14 @@ export const authOptions = {
               accessToken: account?.access_token || null,
               githubId: account?.providerAccountId,
               email: user.email ?? null,
-              tokenExpiresAt: account?.expires_at
-                ? new Date(account.expires_at * 1000)
-                : null,
+              tokenExpiresAt: account?.expires_at ? new Date(account.expires_at * 1000) : null,
             },
           });
         }
 
         return true;
       } catch (error) {
-        console.error("Error in signIn callback:", error);
+        console.error('Error in signIn callback:', error);
         return false;
       }
     },
@@ -106,13 +97,7 @@ export const authOptions = {
 
       return token;
     },
-    async session({
-      session,
-      token,
-    }: {
-      session: Session;
-      token: JWT;
-    }): Promise<Session> {
+    async session({ session, token }: { session: Session; token: JWT }): Promise<Session> {
       return {
         ...session,
         accessToken: token.accessToken,

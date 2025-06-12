@@ -1,8 +1,13 @@
-"use client";
-import React from "react";
-import { useSession, signIn } from "next-auth/react";
-import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
+'use client';
+
+import { signIn, useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
+import React from 'react';
+
+import { Github, GitlabIcon, Mail } from 'lucide-react';
+
+import Spinner from '@/components/spinner';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,12 +15,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Github, GitlabIcon, Mail } from "lucide-react";
-import Spinner from "@/components/spinner";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
@@ -28,7 +31,7 @@ export default function LoginPage() {
     }
   }, [session]);
   // console.log(status);
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
       <div className="flex flex-col h-screen w-full items-center justify-center">
         <Spinner />
@@ -36,14 +39,14 @@ export default function LoginPage() {
     );
   }
 
-  if (status === "authenticated") {
-    return redirect("/home");
+  if (status === 'authenticated') {
+    return redirect('/home');
   }
 
   const handleSignIn = async () => {
-    const result = await signIn("github", { callbackUrl: "/auth/login" });
+    const result = await signIn('github', { callbackUrl: '/auth/login' });
     if (result?.error) {
-      console.error("Sign in error:", result.error);
+      console.error('Sign in error:', result.error);
     }
   };
 
@@ -55,9 +58,7 @@ export default function LoginPage() {
         </div>
         <Card className="bg-white border-gray-200 shadow-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-xl text-center">
-              Log in to i18nForge
-            </CardTitle>
+            <CardTitle className="text-xl text-center">Log in to i18nForge</CardTitle>
             <CardDescription className="text-gray-500 text-center">
               Choose your preferred sign in method
             </CardDescription>
@@ -76,11 +77,11 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="text-xs text-center text-gray-500 flex justify-center">
             <p>
-              By continuing, you agree to i18nForge's{" "}
+              By continuing, you agree to i18nForge's{' '}
               <a href="#" className="underline hover:text-gray-700">
                 Terms of Service
-              </a>{" "}
-              and{" "}
+              </a>{' '}
+              and{' '}
               <a href="#" className="underline hover:text-gray-700">
                 Privacy Policy
               </a>
@@ -90,7 +91,7 @@ export default function LoginPage() {
 
         <div className="text-center text-sm text-gray-500">
           <p>
-            Don't have an account?{" "}
+            Don't have an account?{' '}
             <a href="#" className="text-gray-700 hover:underline">
               Create an account
             </a>

@@ -1,10 +1,14 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
-import { getOrgRepos, getUserRepos } from "../../utils";
-import { type NextRequest } from "next/server";
-import prisma from "@/lib/prisma";
-import { GitHubRepo } from "../../types";
+import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
+
+import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
+import { GetGitHubAccessTokenViaApp } from '@/app/api/global.utils';
+
+import prisma from '@/lib/prisma';
+
+import { GitHubRepo } from '../../types';
+import { getOrgRepos, getUserRepos } from '../../utils';
 
 export type Repository = {
   id: number;
@@ -41,13 +45,13 @@ export async function GET(request: NextRequest, data: { params: Params }) {
     const session = await getServerSession(authOptions);
     const params = await data.params;
     if (!session?.accessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get("page") || "1");
-    const per_page = parseInt(searchParams.get("per_page") || "5");
-    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get('page') || '1');
+    const per_page = parseInt(searchParams.get('per_page') || '5');
+    const search = searchParams.get('search') || '';
 
     const installation = await prisma.installation.findUnique({
       where: {
@@ -56,37 +60,31 @@ export async function GET(request: NextRequest, data: { params: Params }) {
     });
 
     if (!installation) {
-      return NextResponse.json(
-        { error: "Installation not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Installation not found' }, { status: 404 });
     }
 
     let repositories: GitHubRepo[] = [];
 
-    if (installation.type.toLocaleLowerCase() === "user") {
+    if (installation.type.toLocaleLowerCase() === 'user') {
       repositories = await getUserRepos(
         {
           page,
           per_page,
           search,
         },
-        session.accessToken
+        await GetGitHubAccessTokenViaApp(session.githubId),
       );
     } else {
       repositories = await getOrgRepos(
         installation.githubName,
         { page, per_page, search },
-        session.accessToken
+        await GetGitHubAccessTokenViaApp(session.githubId),
       );
     }
 
     return NextResponse.json(repositories.map(mapRepository));
   } catch (error) {
-    console.error("Error fetching repositories:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch repositories" },
-      { status: 500 }
-    );
+    console.error('Error fetching repositories:', error);
+    return NextResponse.json({ error: 'Failed to fetch repositories' }, { status: 500 });
   }
 }

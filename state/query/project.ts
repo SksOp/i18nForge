@@ -1,6 +1,7 @@
-import { JsonValue } from "@prisma/client/runtime/library";
-import { queryOptions } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { JsonValue } from '@prisma/client/runtime/library';
+import { queryOptions } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
 interface Project {
   id: string;
   name: string;
@@ -28,48 +29,48 @@ interface UpdateProjectPayload {
 }
 
 export const createProject = async (data: CreateProjectPayload) => {
-  const response = await fetch("/api/project", {
-    method: "POST",
+  const response = await fetch('/api/project', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
   });
 
   if (response.status === 400) {
-    throw new Error("Project already exists");
+    throw new Error('Project already exists');
   }
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to create project");
+    throw new Error(error.error || 'Failed to create project');
   }
 
   return response.json();
 };
 export const updateProject = async (data: UpdateProjectPayload) => {
   const response = await fetch(`/api/project/${data.id}`, {
-    method: "PUT",
+    method: 'PUT',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({ paths: data.paths }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || "Failed to update project");
+    throw new Error(error.error || 'Failed to update project');
   }
 
   return response.json();
 };
 export const projectsQuery = () => {
   return queryOptions({
-    queryKey: ["projects"],
+    queryKey: ['projects'],
     queryFn: async () => {
-      const response = await fetch("/api/project", {
-        method: "GET",
+      const response = await fetch('/api/project', {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       return response.json() as Promise<Project[]>;
@@ -79,12 +80,12 @@ export const projectsQuery = () => {
 
 export const projectQuery = (projectId: string) => {
   return queryOptions({
-    queryKey: ["project", projectId],
+    queryKey: ['project', projectId],
     queryFn: async () => {
       const response = await fetch(`/api/project/${projectId}`, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       return response.json() as Promise<Project>;
@@ -92,21 +93,21 @@ export const projectQuery = (projectId: string) => {
   });
 };
 
-export const getFileContent = (projectId: string, accessToken?: string) => {
+export const getFileContent = (projectId: string, accessToken?: string, branch?: string) => {
   return queryOptions({
-    queryKey: ["fileContent", projectId],
+    queryKey: ['fileContent', projectId, branch],
     queryFn: async () => {
-      const response = await fetch(`/api/project/meta/file?id=${projectId}`, {
-        method: "GET",
+      const response = await fetch(`/api/project/meta/file?id=${projectId}&branch=${branch}`, {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
-          "x-user-accessToken": accessToken || "",
+          'Content-Type': 'application/json',
+          'x-user-accessToken': accessToken || '',
         },
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to get file content");
+        throw new Error(error.error || 'Failed to get file content');
       }
 
       return response.json() as Promise<{
@@ -118,16 +119,16 @@ export const getFileContent = (projectId: string, accessToken?: string) => {
 
 export const branchQuery = (userName: string, repoName: string) => {
   return queryOptions({
-    queryKey: ["branch", repoName, userName],
+    queryKey: ['branch', repoName, userName],
     queryFn: async () => {
       const response = await fetch(
         `/api/project/meta/branch?repo=${repoName}&userName=${userName}`,
         {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-        }
+        },
       );
       return response.json() as Promise<{ branches: string[] }>;
     },

@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ClientLayout } from "./client-layout";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+
+import { ClientLayout } from './client-layout';
+import './globals.css';
+
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
 //   subsets: ["latin"],
@@ -13,8 +15,8 @@ import { ClientLayout } from "./client-layout";
 // });
 
 export const metadata: Metadata = {
-  title: "i18nForge",
-  description: "Seamless i18n Management for Your Website",
+  title: 'i18nForge',
+  description: 'Seamless i18n Management for Your Website',
 };
 
 export default function RootLayout({

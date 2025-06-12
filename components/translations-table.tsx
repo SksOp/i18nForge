@@ -1,28 +1,22 @@
-"use client";
+'use client';
 
+import { useParams } from 'next/navigation';
+import { use, useEffect, useMemo, useState } from 'react';
+
+import { TranslationEntry } from '@/types/translations';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  flexRender,
   ColumnDef,
   Row,
-} from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { TranslationEntry } from "@/types/translations";
-import { use, useEffect, useMemo, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { Loader2, Search, Wand2, X } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -30,18 +24,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "./ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-} from "./ui/select";
-import { Loader2, Search, Wand2, X } from "lucide-react";
-import { toast } from "sonner";
-import { unflattenTranslations } from "@/utils/translation-utils";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+import { unflattenTranslations } from '@/utils/translation-utils';
+
+import { cn } from '@/lib/utils';
+
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 interface TranslationsTableProps {
   data: TranslationEntry[];
@@ -71,9 +70,9 @@ export function TranslationsTable({
     key: string;
     language: string;
   } | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const [editValue, setEditValue] = useState('');
   const [editedValues, setEditedValues] = useState<EditedValue[]>([]);
-  const [commitMessage, setCommitMessage] = useState("");
+  const [commitMessage, setCommitMessage] = useState('');
   const [showCommitDialog, setShowCommitDialog] = useState(false);
   const [branchName, setBranchName] = useState(selectedBranch);
   const queryClient = useQueryClient();
@@ -81,7 +80,7 @@ export function TranslationsTable({
   const [projectId, setProjectId] = useState<string | null>(null);
   const [isCommitting, setIsCommitting] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState('');
 
   useEffect(() => {
     setProjectId(params.id as string);
@@ -94,17 +93,14 @@ export function TranslationsTable({
       try {
         setEditedValues(JSON.parse(savedDrafts));
       } catch (err) {
-        console.error("Failed to load drafts:", err);
+        console.error('Failed to load drafts:', err);
       }
     }
   }, [projectId]);
 
   useEffect(() => {
     if (projectId) {
-      localStorage.setItem(
-        `translation-drafts-${projectId}`,
-        JSON.stringify(editedValues)
-      );
+      localStorage.setItem(`translation-drafts-${projectId}`, JSON.stringify(editedValues));
     }
   }, [editedValues, projectId]);
 
@@ -131,21 +127,13 @@ export function TranslationsTable({
 
   const isCellEdited = (key: string, language: string) =>
     editedValues.some(
-      (v) =>
-        v.key === key &&
-        v.language === language &&
-        v.newValue !== v.originalValue
+      (v) => v.key === key && v.language === language && v.newValue !== v.originalValue,
     );
 
   const getEditedValue = (key: string, language: string) =>
-    editedValues.find((v) => v.key === key && v.language === language)
-      ?.newValue;
+    editedValues.find((v) => v.key === key && v.language === language)?.newValue;
 
-  const handleCellClick = (
-    key: string,
-    language: string,
-    currentValue: string
-  ) => {
+  const handleCellClick = (key: string, language: string, currentValue: string) => {
     setEditingCell({ key, language });
     setEditValue(currentValue);
   };
@@ -153,11 +141,11 @@ export function TranslationsTable({
   const getDefaultBranch = async () => {
     try {
       const res = await fetch(`/api/project/meta/branch/db?id=${projectId}`);
-      if (!res.ok) throw new Error("Failed to fetch default branch");
+      if (!res.ok) throw new Error('Failed to fetch default branch');
       const data = await res.json();
       return data.defaultBranch;
     } catch (error) {
-      console.error("Error fetching default branch:", error);
+      console.error('Error fetching default branch:', error);
       return selectedBranch;
     }
   };
@@ -173,12 +161,10 @@ export function TranslationsTable({
   const commitEdit = () => {
     if (editingCell) {
       const originalValue =
-        data.find((d) => d.key === editingCell.key)?.[editingCell.language] ??
-        "";
+        data.find((d) => d.key === editingCell.key)?.[editingCell.language] ?? '';
       setEditedValues((prev) => {
         const existingIndex = prev.findIndex(
-          (v) =>
-            v.key === editingCell.key && v.language === editingCell.language
+          (v) => v.key === editingCell.key && v.language === editingCell.language,
         );
         const updated: EditedValue = {
           key: editingCell.key,
@@ -196,12 +182,12 @@ export function TranslationsTable({
       });
     }
     setEditingCell(null);
-    setEditValue("");
+    setEditValue('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") commitEdit();
-    else if (e.key === "Escape") setEditingCell(null);
+    if (e.key === 'Enter') commitEdit();
+    else if (e.key === 'Escape') setEditingCell(null);
   };
 
   const handleCommit = async () => {
@@ -214,11 +200,8 @@ export function TranslationsTable({
       fileNames.forEach((lang) => {
         updatedFlatFiles[lang] = {};
         data.forEach((entry) => {
-          const edited = editedValues.find(
-            (v) => v.key === entry.key && v.language === lang
-          );
-          updatedFlatFiles[lang][entry.key] =
-            edited?.newValue ?? entry[lang] ?? "";
+          const edited = editedValues.find((v) => v.key === entry.key && v.language === lang);
+          updatedFlatFiles[lang][entry.key] = edited?.newValue ?? entry[lang] ?? '';
         });
       });
 
@@ -239,82 +222,76 @@ export function TranslationsTable({
       });
 
       if (changedFiles.length === 0) {
-        toast.info("No changes to commit.");
+        toast.info('No changes to commit.');
         return;
       }
 
       // 3. Commit only changed files
       setIsCommitting(true);
       const res = await fetch(
-        `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(
-          commitMessage
-        )}`,
+        `/api/project/meta/commit?id=${projectId}&message=${encodeURIComponent(commitMessage)}`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             branch: branchName,
             content: changedFiles,
           }),
-        }
+        },
       );
 
       setIsCommitting(false);
 
-      if (!res.ok) throw new Error("Failed to commit changes");
+      if (!res.ok) throw new Error('Failed to commit changes');
 
-      queryClient.invalidateQueries({ queryKey: ["fileContent", projectId] });
+      queryClient.invalidateQueries({ queryKey: ['fileContent', projectId] });
       localStorage.removeItem(`translation-drafts-${projectId}`);
       setEditedValues([]);
       setShowCommitDialog(false);
-      setCommitMessage("");
-      toast.success("Changes committed successfully!");
+      setCommitMessage('');
+      toast.success('Changes committed successfully!');
     } catch (err) {
       console.error(err);
-      toast.error("Commit failed.");
+      toast.error('Commit failed.');
       setIsCommitting(false);
     }
   };
 
-  const handleAI = async (
-    key: string,
-    value: Record<string, string>,
-    language: string
-  ) => {
+  const handleAI = async (key: string, value: Record<string, string>, language: string) => {
     try {
       setIsAIProcessing(true);
       const res = await fetch(`/api/ai/translation`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value, language }),
       });
       const data = await res.json();
 
       if (data.result) {
         setEditedValues((prev) => {
-          const existingIndex = prev.findIndex(
-            (v) => v.key === key && v.language === language
-          );
+          const existingIndex = prev.findIndex((v) => v.key === key && v.language === language);
           const updated: EditedValue = {
             key,
             language,
-            newValue: (data.result.content).endsWith("\n") ? (data.result.content).slice(0, -1) : data.result.content,
-            originalValue: value[language] || "",
+            newValue: data.result.content.endsWith('\n')
+              ? data.result.content.slice(0, -1)
+              : data.result.content,
+            originalValue: value[language] || '',
           };
 
           if (existingIndex >= 0) {
             const next = [...prev];
             next[existingIndex] = updated;
-            toast.success("AI translation completed");
+            toast.success('AI translation completed');
             return next;
           }
-          toast.success("AI translation completed");
+          toast.success('AI translation completed');
           return [...prev, updated];
         });
       }
     } catch (error) {
-      console.error("AI translation failed:", error);
-      toast.error("AI translation failed");
+      console.error('AI translation failed:', error);
+      toast.error('AI translation failed');
     } finally {
       setIsAIProcessing(false);
     }
@@ -323,8 +300,8 @@ export function TranslationsTable({
   const columns = useMemo<ColumnDef<TranslationEntry>[]>(
     () => [
       {
-        header: "Translation Key",
-        accessorKey: "key",
+        header: 'Translation Key',
+        accessorKey: 'key',
         cell: ({ getValue }) => (
           <div className="font-mono text-sm truncate">{getValue<string>()}</div>
         ),
@@ -336,25 +313,20 @@ export function TranslationsTable({
           const entry = row.original;
           const key = entry.key;
           const editedVal = getEditedValue(key, lang);
-          const isEditing =
-            editingCell?.key === key && editingCell?.language === lang;
+          const isEditing = editingCell?.key === key && editingCell?.language === lang;
           const isEdited = isCellEdited(key, lang);
           const isProcessing =
-            isAIProcessing &&
-            editingCell?.key === key &&
-            editingCell?.language === lang;
+            isAIProcessing && editingCell?.key === key && editingCell?.language === lang;
 
           return (
             <div className="flex items-center gap-2">
               <div
                 className={cn(
-                  "p-2 truncate cursor-pointer flex-1",
-                  isEdited ? "bg-yellow-100" : "",
-                  isProcessing ? "opacity-50" : ""
+                  'p-2 truncate cursor-pointer flex-1',
+                  isEdited ? 'bg-yellow-100' : '',
+                  isProcessing ? 'opacity-50' : '',
                 )}
-                onClick={() =>
-                  handleCellClick(key, lang, editedVal ?? entry[lang] ?? "")
-                }
+                onClick={() => handleCellClick(key, lang, editedVal ?? entry[lang] ?? '')}
               >
                 {isEditing ? (
                   <Input
@@ -365,9 +337,7 @@ export function TranslationsTable({
                     autoFocus
                   />
                 ) : (
-                  <span className="line-clamp-2">
-                    {editedVal ?? entry[lang] ?? "-"}
-                  </span>
+                  <span className="line-clamp-2">{editedVal ?? entry[lang] ?? '-'}</span>
                 )}
               </div>
               <Button
@@ -375,34 +345,25 @@ export function TranslationsTable({
                 size="icon"
                 disabled={isAIProcessing}
                 className={cn(
-                  "h-8 w-8",
-                  isProcessing ? "bg-blue-50" : "",
-                  isAIProcessing ? "cursor-not-allowed" : ""
+                  'h-8 w-8',
+                  isProcessing ? 'bg-blue-50' : '',
+                  isAIProcessing ? 'cursor-not-allowed' : '',
                 )}
                 onClick={(e) => {
                   e.stopPropagation();
                   const translations: Record<string, string> = {};
                   fileNames.forEach((l) => {
                     const editedVal = getEditedValue(key, l);
-                    translations[l] = editedVal ?? entry[l] ?? "";
+                    translations[l] = editedVal ?? entry[l] ?? '';
                   });
                   handleAI(key, translations, lang);
                 }}
-                title={
-                  isAIProcessing
-                    ? "AI Translation in progress..."
-                    : "AI Translate"
-                }
+                title={isAIProcessing ? 'AI Translation in progress...' : 'AI Translate'}
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                 ) : (
-                  <Wand2
-                    className={cn(
-                      "h-4 w-4",
-                      isAIProcessing ? "opacity-50" : ""
-                    )}
-                  />
+                  <Wand2 className={cn('h-4 w-4', isAIProcessing ? 'opacity-50' : '')} />
                 )}
               </Button>
             </div>
@@ -410,7 +371,7 @@ export function TranslationsTable({
         },
       })),
     ],
-    [editingCell, editValue, editedValues, fileNames, isAIProcessing]
+    [editingCell, editValue, editedValues, fileNames, isAIProcessing],
   );
 
   const table = useReactTable({
@@ -426,18 +387,12 @@ export function TranslationsTable({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Commit Changes</DialogTitle>
-            <DialogDescription>
-              Enter a message for this commit.
-            </DialogDescription>
+            <DialogDescription>Enter a message for this commit.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-2">
               <Label>Branch</Label>
-              <Select
-                value={branchName}
-                onValueChange={setBranchName}
-                disabled={true}
-              >
+              <Select value={branchName} onValueChange={setBranchName} disabled={true}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select branch" />
                 </SelectTrigger>
@@ -452,21 +407,15 @@ export function TranslationsTable({
             </div>
             <div className="flex flex-col gap-2">
               <Label>Message</Label>
-              <Input
-                value={commitMessage}
-                onChange={(e) => setCommitMessage(e.target.value)}
-              />
+              <Input value={commitMessage} onChange={(e) => setCommitMessage(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCommitDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowCommitDialog(false)}>
               Cancel
             </Button>
             <Button onClick={handleCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing..." : "Commit"}
+              {isCommitting ? 'Committing...' : 'Commit'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -477,14 +426,14 @@ export function TranslationsTable({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search..."
-            value={globalFilter ?? ""}
+            value={globalFilter ?? ''}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="pl-8 pr-8"
           />
           {globalFilter && (
             <Button
               variant="ghost"
-              onClick={() => setGlobalFilter("")}
+              onClick={() => setGlobalFilter('')}
               className="absolute right-1 top-1 h-7 w-7 p-0"
             >
               <X className="h-4 w-4" />
@@ -495,9 +444,7 @@ export function TranslationsTable({
 
       <div className="flex justify-between items-center">
         {editedValues.length > 0 && (
-          <div className="text-sm text-amber-600">
-            {editedValues.length} pending change(s)
-          </div>
+          <div className="text-sm text-amber-600">{editedValues.length} pending change(s)</div>
         )}
         <div className="flex gap-2">
           {editedValues.length > 0 && (
@@ -505,9 +452,7 @@ export function TranslationsTable({
               <Button variant="outline" onClick={() => setEditedValues([])}>
                 Discard Drafts
               </Button>
-              <Button onClick={() => setShowCommitDialog(true)}>
-                Commit Changes
-              </Button>
+              <Button onClick={() => setShowCommitDialog(true)}>Commit Changes</Button>
             </>
           )}
         </div>
@@ -520,10 +465,7 @@ export function TranslationsTable({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+                    {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
               </TableRow>
@@ -553,8 +495,7 @@ export function TranslationsTable({
           Previous
         </Button>
         <span className="text-sm">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
         </span>
         <Button
           variant="outline"

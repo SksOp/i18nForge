@@ -1,11 +1,12 @@
-import prisma from "@/lib/prisma";
-import { InputJsonValue } from "@prisma/client/runtime/library";
+import { InputJsonValue } from '@prisma/client/runtime/library';
+
+import prisma from '@/lib/prisma';
 
 export interface InstallationPayload {
-  action: "created" | "deleted";
+  action: 'created' | 'deleted';
   installation: {
     id: number;
-    target_type: "User" | "Organization";
+    target_type: 'User' | 'Organization';
     account: {
       id: number;
       login: string;
@@ -19,9 +20,9 @@ export interface InstallationPayload {
 
 export const installation = async (payload: InstallationPayload) => {
   // console.log("action", payload.action);
-  if (payload.action === "created") {
+  if (payload.action === 'created') {
     await handleActionCreated(payload);
-  } else if (payload.action === "deleted") {
+  } else if (payload.action === 'deleted') {
     await handleActionDeleted(payload);
   }
 };
@@ -38,7 +39,7 @@ const handleActionCreated = async (payload: InstallationPayload) => {
       },
     });
   } catch (error) {
-    console.error("Error creating installation:", error);
+    console.error('Error creating installation:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -53,7 +54,7 @@ const handleActionDeleted = async (payload: InstallationPayload) => {
       },
     });
   } catch (error) {
-    console.error("Error deleting installation:", error);
+    console.error('Error deleting installation:', error);
     throw error;
   } finally {
     await prisma.$disconnect();

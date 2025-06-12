@@ -1,25 +1,24 @@
-import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
-import { authOptions } from "../auth/[...nextauth]/auth";
-import { getUser } from "../auth/[...nextauth]/auth";
-import prisma from "@/lib/prisma";
+import { getServerSession } from 'next-auth';
+import { NextResponse } from 'next/server';
+
+import prisma from '@/lib/prisma';
+
+import { authOptions } from '../auth/[...nextauth]/auth';
+import { getUser } from '../auth/[...nextauth]/auth';
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.accessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { name, owner, ownerType, paths, repoName, branch } = body;
 
     if (!name || !owner || !ownerType || !paths || !repoName || !branch) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const existingProject = await prisma.project.findFirst({
@@ -30,8 +29,8 @@ export async function POST(request: Request) {
 
     if (existingProject) {
       return NextResponse.json(
-        { error: "A project with this name already exists" },
-        { status: 400 }
+        { error: 'A project with this name already exists' },
+        { status: 400 },
       );
     }
 
@@ -42,7 +41,7 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const project = await prisma.project.create({
@@ -59,11 +58,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(project);
   } catch (error) {
-    console.error("Error creating project:", error);
-    return NextResponse.json(
-      { error: "Failed to create project" },
-      { status: 500 }
-    );
+    console.error('Error creating project:', error);
+    return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
   }
 }
 export async function GET() {
@@ -71,7 +67,7 @@ export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session?.accessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = await getUser(session.githubId);
@@ -83,10 +79,7 @@ export async function GET() {
 
     return NextResponse.json(projects);
   } catch (error) {
-    console.error("Error fetching projects:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch projects" },
-      { status: 500 }
-    );
+    console.error('Error fetching projects:', error);
+    return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
   }
 }

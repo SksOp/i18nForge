@@ -1,5 +1,5 @@
 export interface MetaOperationRequest {
-  operation: "commit" | "pr";
+  operation: 'commit' | 'pr';
   owner: string;
   repo: string;
   branch?: string;
@@ -22,4 +22,20 @@ export interface PullRequestResponse {
     url: string;
     number: number;
   };
+}
+export interface GitHubAppConfig {
+  installationId: string;
+  githubId: string;
+}
+export interface AccessTokenResponse {
+  token: string;
+  expires_at: string;
+  permissions: Record<string, string>;
+  repository_selection: string;
+}
+
+export interface JWTPayload {
+  iat: number;
+  exp: number;
+  iss: string;
 }

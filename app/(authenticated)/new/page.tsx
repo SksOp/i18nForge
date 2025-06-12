@@ -1,5 +1,21 @@
-"use client";
-import React, { useState, useEffect, useMemo } from "react";
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useMemo, useState } from 'react';
+
+import { Installation } from '@/app/api/github/installations/route';
+import { Repository } from '@/app/api/github/repositories/[installtionId]/route';
+import Layout from '@/layout/layout';
+import { installationRepositoriesQuery, installationsQuery } from '@/state/query/installation';
+import { useInfiniteQuery, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { ExternalLink, Globe, Loader, Lock, Plus, Search, User } from 'lucide-react';
+import { toast } from 'sonner';
+
+import Spinner from '@/components/spinner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -7,50 +23,19 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  installationsQuery,
-  installationRepositoriesQuery,
-} from "@/state/query/installation";
-import {
-  useInfiniteQuery,
-  useSuspenseQuery,
-  useQuery,
-} from "@tanstack/react-query";
-import { Installation } from "@/app/api/github/installations/route";
-import { Repository } from "@/app/api/github/repositories/[installtionId]/route";
-import {
-  User,
-  Plus,
-  Globe,
-  ExternalLink,
-  Loader,
-  Search,
-  Lock,
-} from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import useDebounce from "@/hooks/use-debounce";
-import Layout from "@/layout/layout";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
-import Spinner from "@/components/spinner";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+
+import useDebounce from '@/hooks/use-debounce';
 
 const URL_FOR_INSTALL = process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL;
 
 export default function HomePage() {
   const { data, isLoading } = useSuspenseQuery(installationsQuery());
-  const [selectedInstallation, setSelectedInstallation] = useState<string>(
-    data[0]?.id
-  );
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedInstallation, setSelectedInstallation] = useState<string>(data[0]?.id);
+  const [searchQuery, setSearchQuery] = useState('');
   // console.log("data", data);
-  const installation = data?.find(
-    (installation) => installation.id === selectedInstallation
-  );
+  const installation = data?.find((installation) => installation.id === selectedInstallation);
 
   if (isLoading) {
     return (
@@ -61,7 +46,7 @@ export default function HomePage() {
   }
 
   const filteredRepos = data.filter((repo) =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase())
+    repo.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -77,14 +62,12 @@ export default function HomePage() {
         <Card className="shadow-sm max-h-[60vh] overflow-y-auto">
           <CardContent className="p-6">
             <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Import Git Repository
-              </h2>
+              <h2 className="text-xl font-semibold mb-4">Import Git Repository</h2>
               <Select
                 value={selectedInstallation}
                 onValueChange={(v) => {
-                  if (v === "install") {
-                    window.open(URL_FOR_INSTALL ?? "#", "_blank");
+                  if (v === 'install') {
+                    window.open(URL_FOR_INSTALL ?? '#', '_blank');
                   } else {
                     setSelectedInstallation(v);
                   }
@@ -98,7 +81,7 @@ export default function HomePage() {
                     {data?.map((installation) => (
                       <SelectItem key={installation.id} value={installation.id}>
                         <div className="flex items-center">
-                          {installation.type === "Organization" ? (
+                          {installation.type === 'Organization' ? (
                             <Globe className="mr-2 h-4 w-4" />
                           ) : (
                             <User className="mr-2 h-4 w-4" />
@@ -133,14 +116,9 @@ export default function HomePage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="mb-6 bg-primary/10 p-4 rounded-full">
-                  <Button
-                    variant="default"
-                    size="icon"
-                    className="h-12 w-12 rounded-full"
-                    asChild
-                  >
+                  <Button variant="default" size="icon" className="h-12 w-12 rounded-full" asChild>
                     <Link
-                      href={URL_FOR_INSTALL ?? "#"}
+                      href={URL_FOR_INSTALL ?? '#'}
                       className="flex items-center justify-center"
                     >
                       <Plus className="h-6 w-6" />
@@ -149,11 +127,10 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-lg font-medium mb-2">Connect to GitHub</h3>
                 <p className="text-muted-foreground text-center max-w-md mb-4">
-                  Authorize GitHub to import your repositories and set up
-                  automatic deployments
+                  Authorize GitHub to import your repositories and set up automatic deployments
                 </p>
                 <Button asChild>
-                  <Link href={URL_FOR_INSTALL ?? "#"}>Install GitHub App</Link>
+                  <Link href={URL_FOR_INSTALL ?? '#'}>Install GitHub App</Link>
                 </Button>
               </div>
             )}
@@ -177,19 +154,17 @@ export default function HomePage() {
 
 const RepoList = ({ installation }: { installation: Installation }) => {
   const router = useRouter();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
-  const [importedProjectIds, setImportedProjectIds] = useState<
-    Record<number, string | null>
-  >({});
+  const [importedProjectIds, setImportedProjectIds] = useState<Record<number, string | null>>({});
 
   const { data: repositories, isLoading } = useQuery(
     installationRepositoriesQuery(installation.installationId, {
       per_page: 10,
       page,
       search: debouncedSearch,
-    })
+    }),
   );
 
   useEffect(() => {
@@ -197,7 +172,7 @@ const RepoList = ({ installation }: { installation: Installation }) => {
       if (!repositories) return;
 
       const results = await Promise.all(
-        repositories.map((repo) => checkForExistingProject(repo, installation))
+        repositories.map((repo) => checkForExistingProject(repo, installation)),
       );
 
       const newStatus: Record<number, string | null> = {};
@@ -210,14 +185,11 @@ const RepoList = ({ installation }: { installation: Installation }) => {
     checkAllProjects();
   }, [repositories]);
 
-  const checkForExistingProject = async (
-    repo: Repository,
-    installation: Installation
-  ) => {
+  const checkForExistingProject = async (repo: Repository, installation: Installation) => {
     const res = await fetch(`/api/project/check`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         name: `${installation?.name}/${repo.name}`,
@@ -249,29 +221,22 @@ const RepoList = ({ installation }: { installation: Installation }) => {
                 <Button
                   size="sm"
                   disabled={!!alreadyImported}
-                  variant={alreadyImported ? "outline" : "default"}
+                  variant={alreadyImported ? 'outline' : 'default'}
                   onClick={async () => {
                     if (alreadyImported) return;
 
-                    const loadingToast = toast.loading(
-                      "Checking project status..."
-                    );
-                    const result = await checkForExistingProject(
-                      repo,
-                      installation
-                    );
+                    const loadingToast = toast.loading('Checking project status...');
+                    const result = await checkForExistingProject(repo, installation);
                     toast.dismiss(loadingToast);
 
                     if (result?.projectId) {
                       router.push(`/projects/${result.projectId}`);
                     } else {
-                      router.push(
-                        `/projects/new/${installation.installationId}/${repo.full_name}`
-                      );
+                      router.push(`/projects/new/${installation.installationId}/${repo.full_name}`);
                     }
                   }}
                 >
-                  {alreadyImported ? "Imported" : "Import"}
+                  {alreadyImported ? 'Imported' : 'Import'}
                 </Button>
               </div>
             );

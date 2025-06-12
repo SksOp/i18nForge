@@ -1,5 +1,6 @@
 export const emailTemplate = (projectName: string, colabLink: string, senderName: string) => {
-    return `
+  const year = new Date().getFullYear();
+  return `
   <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,7 +105,7 @@ export const emailTemplate = (projectName: string, colabLink: string, senderName
 <body>
     <div class="container">
         <div class="header">
-            <img src="/api/placeholder/150/60" alt="i18nForge Logo">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 300'><path d='M66.6585 1.83056C138.579 35.1733 478.299 46.7049 7.0978 295.937C485.26 133.941 371.903 -5.57091 66.6585 1.83056Z' fill='%23D3D3D3'/></svg>" alt="i18nForge Logo">
             <h1>Translate with i18nForge</h1>
         </div>
         <div class="content">
@@ -122,8 +123,6 @@ export const emailTemplate = (projectName: string, colabLink: string, senderName
                 <h3>How to Get Started:</h3>
                 <ol>
                     <li>Click the "Join Translation Team" button below to access the repository</li>
-                    <li>Fork the repository to your GitHub account</li>
-                    <li>Navigate to the <code>/locales/</code> directory where you'll find language files</li>
                     <li>Edit the translation files for your preferred language</li>
                     <li>Submit a pull request with your changes</li>
                 </ol>
@@ -145,7 +144,7 @@ export const emailTemplate = (projectName: string, colabLink: string, senderName
         </div>
         
         <div class="footer">
-            <p>© 2025 i18nForge. All rights reserved.</p>
+            <p>© ${year === 2025 ? '2025' : `2025-${year}`} i18nForge. All rights reserved.</p>
             <div class="social-links">
                 <a href="https://github.com/i18nForge">GitHub</a> | 
                 <a href="https://twitter.com/i18nForge">Twitter</a> | 
@@ -158,4 +157,4 @@ export const emailTemplate = (projectName: string, colabLink: string, senderName
 </body>
 </html>
     `;
-}
+};
