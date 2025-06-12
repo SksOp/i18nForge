@@ -22,7 +22,12 @@ interface BuildTranslationColumnsParams {
   handleCellClick: (key: string, lang: string, value: string) => void;
   commitEdit: (val: string) => void;
   setEditValue: (val: string) => void;
-  handleAI: (key: string, translations: Record<string, string>, lang: string) => void;
+  handleAI: (
+    key: string,
+    value: Record<string, string>,
+    language: string,
+    onResult: (newVal: string) => void,
+  ) => void;
   handleUndo: (key: string, language: string) => void;
 }
 
@@ -70,11 +75,11 @@ export function buildTranslationColumns({
             onEditChange={setEditValue}
             onCommitEdit={commitEdit}
             onUndo={() => handleUndo(key, lang)}
-            onAITranslate={() => {
+            onAITranslate={(currValue, setLocalVal) => {
               const translations = Object.fromEntries(
                 fileNames.map((l) => [l, getEditedValue(key, l) ?? entry[l] ?? '']),
               );
-              handleAI(key, translations, lang);
+              handleAI(key, translations, lang, setLocalVal);
             }}
           />
         );

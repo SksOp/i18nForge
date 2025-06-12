@@ -195,25 +195,36 @@ function DashboardTranslation({ id }: { id: string }) {
     setEditingCell(null);
   };
 
-  const handleAI = async (key: string, value: Record<string, string>, language: string) => {
+  const handleAI = async (
+    key: string,
+    value: Record<string, string>,
+    language: string,
+    onResult: (newVal: string) => void,
+  ) => {
     try {
       setIsAIProcessing(true);
+
       const res = await fetch(`/api/ai/translation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value, language }),
       });
+
       const data = await res.json();
 
       if (data.result) {
+        const resultText = data.result.content.endsWith('\n')
+          ? data.result.content.slice(0, -1)
+          : data.result.content;
+
+        onResult(resultText); // update local state
+
         setEditedValues((prev) => {
           const existingIndex = prev.findIndex((v) => v.key === key && v.language === language);
           const updated: EditedValue = {
             key,
             language,
-            newValue: data.result.content.endsWith('\n')
-              ? data.result.content.slice(0, -1)
-              : data.result.content,
+            newValue: resultText,
             originalValue: value[language] || '',
           };
 
@@ -223,6 +234,7 @@ function DashboardTranslation({ id }: { id: string }) {
             toast.success('AI translation completed');
             return next;
           }
+
           toast.success('AI translation completed');
           return [...prev, updated];
         });

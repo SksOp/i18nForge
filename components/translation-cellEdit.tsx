@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { Loader2, Wand2 } from 'lucide-react';
 
@@ -19,36 +19,40 @@ interface TranslationCellEditorProps {
   onEditChange: (val: string) => void;
   onCommitEdit: (val: string) => void;
   onUndo: () => void;
-  onAITranslate: () => void;
+  onAITranslate: (currVal: string, setVal: (newVal: string) => void) => void;
 }
 
 export const TranslationCellEditor: React.FC<TranslationCellEditorProps> = ({
   value,
-  editValue,
   isEditing,
   isEdited,
   isAIProcessing,
   onCellClick,
-  onEditChange,
   onCommitEdit,
   onUndo,
   onAITranslate,
 }) => {
   const [localValue, setLocalValue] = useState(value);
+  const ignoreBlur = useRef(false);
 
   useEffect(() => {
-    if (isEditing) {
-      setLocalValue(value); // reset value on re-edit
-    }
+    if (isEditing) setLocalValue(value);
   }, [isEditing, value]);
 
   const handleBlur = () => {
-    onCommitEdit(localValue); // pass final value to parent
+    if (!ignoreBlur.current) {
+      onCommitEdit(localValue);
+    }
+  };
+
+  const handleAI = () => {
+    onAITranslate(localValue, setLocalValue);
   };
 
   return (
     <div className={cn('relative flex items-center gap-2 group', isEdited && 'bg-yellow-50')}>
       {isEdited && <div className="absolute left-0 top-0 h-full w-1 bg-green-500 rounded-r-md" />}
+
       <div
         className={cn('flex-1 p-2 truncate cursor-pointer', isAIProcessing && 'opacity-50')}
         onClick={onCellClick}
@@ -71,9 +75,13 @@ export const TranslationCellEditor: React.FC<TranslationCellEditorProps> = ({
           size="icon"
           disabled={isAIProcessing}
           className={cn('h-8 w-8', isAIProcessing && 'cursor-not-allowed')}
+          onMouseDown={() => {
+            ignoreBlur.current = true;
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            onAITranslate();
+            ignoreBlur.current = false; // reset after click
+            handleAI();
           }}
           title={isAIProcessing ? 'AI Translation in progress...' : 'AI Translate'}
         >
