@@ -13,7 +13,8 @@
     "smee": "smee -P /api/github/webhook -p 3000",
     "deploy": "npm run generate && npm run build  && npm run migrate",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "i": "npm install --legacy-peer-deps"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

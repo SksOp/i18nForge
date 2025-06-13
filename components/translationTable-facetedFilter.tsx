@@ -1,13 +1,22 @@
-import * as React from "react";
-import { Column } from "@tanstack/react-table";
-import { Check, Command, PlusCircle } from "lucide-react";
+import * as React from 'react';
 
-import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
-import { Badge } from "./ui/badge";
-import { CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "./ui/command";
+import { Column } from '@tanstack/react-table';
+import { Check, Command, PlusCircle } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
+
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import {
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from './ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Separator } from './ui/separator';
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -48,7 +57,11 @@ export function DataTableFacetedFilter<TData, TValue>({
                   options
                     .filter((option) => selectedValues.has(option.value))
                     .map((option) => (
-                      <Badge variant="secondary" key={option.value} className="rounded-sm px-1 font-normal">
+                      <Badge
+                        variant="secondary"
+                        key={option.value}
+                        className="rounded-sm px-1 font-normal"
+                      >
                         {option.label}
                       </Badge>
                     ))
@@ -81,8 +94,10 @@ export function DataTableFacetedFilter<TData, TValue>({
                   >
                     <div
                       className={cn(
-                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                        isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                        'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                        isSelected
+                          ? 'bg-primary text-primary-foreground'
+                          : 'opacity-50 [&_svg]:invisible',
                       )}
                     >
                       <Check />

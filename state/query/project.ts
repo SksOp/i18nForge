@@ -134,3 +134,20 @@ export const branchQuery = (userName: string, repoName: string) => {
     },
   });
 };
+
+export const dashboardQuery = (projectId: string) => {
+  return queryOptions({
+    queryKey: ['dashboard', projectId],
+    queryFn: async () => {
+      const response = await fetch(`/api/dashboard?projectId=${projectId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.json() as Promise<{
+        dashboard: { commits: number; collaborators: number; languages: number };
+      }>;
+    },
+  });
+};
