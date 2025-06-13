@@ -230,7 +230,7 @@ export default function TranslationsPage({
     setIsDialogOpen(false);
     setBranchName('');
   };
-  
+
   return (
     <Layout className="gap-6">
       {/* Header Section */}

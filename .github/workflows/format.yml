@@ -2,9 +2,9 @@ name: Format Code
 
 on:
   push:
-    branches: [ '*' ]
+    branches: ['*']
   pull_request:
-    branches: [ '*' ]
+    branches: ['*']
 
 jobs:
   format:
@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -59,7 +59,7 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const branch = 'format-code-' + Date.now();
-            
+
             await github.rest.pulls.create({
               owner,
               repo,

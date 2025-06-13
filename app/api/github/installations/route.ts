@@ -22,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const orgs = await getUserOrgs(await GetGitHubAccessTokenViaApp(session.githubId));
+    const orgs = await getUserOrgs(session.accessToken);
     // console.log(session);
     const installations = await getAllOrgInstallations(orgs);
     const userInstallation = await getUserSelfInstallation(session.githubId);

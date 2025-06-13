@@ -85,7 +85,7 @@ function DashboardSettings({ id }: { id: string }) {
     );
   if (isError) return <p>Failed to load contributors.</p>;
   console.log('contributors', contributors);
-  
+
   return (
     <Card className="w-full p-4 flex flex-col gap-4 ">
       <CardHeader className="p-0">
@@ -178,7 +178,7 @@ function DashboardSettings({ id }: { id: string }) {
         {contributors?.contributors?.map((member) => (
           <div key={member.name} className="flex items-center gap-4 p-4 border-b last:border-b-0">
             <Avatar>
-              <AvatarImage src={"/placeholder"} alt="User" />
+              <AvatarImage src={'/placeholder'} alt="User" />
               <AvatarFallback className="text-xs">{member.email[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">

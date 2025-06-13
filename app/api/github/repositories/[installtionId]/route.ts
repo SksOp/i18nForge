@@ -72,13 +72,13 @@ export async function GET(request: NextRequest, data: { params: Params }) {
           per_page,
           search,
         },
-        await GetGitHubAccessTokenViaApp(session.githubId),
+        session.accessToken,
       );
     } else {
       repositories = await getOrgRepos(
         installation.githubName,
         { page, per_page, search },
-        await GetGitHubAccessTokenViaApp(session.githubId),
+        session.accessToken,
       );
     }
 

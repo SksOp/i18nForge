@@ -44,7 +44,7 @@ export class ColabService {
       async (tx) => {
         for (const email of emailsString) {
           if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-            failedEmails[email] = "Invalid email";
+            failedEmails[email] = 'Invalid email';
             continue;
           }
 
@@ -66,16 +66,16 @@ export class ColabService {
               email,
               colabLink,
               expiresAt,
-              status: "pending",
+              status: 'pending',
             },
           });
           results.push(contributor);
-          successEmails[email] = "Invite sent";
+          successEmails[email] = 'Invite sent';
         }
       },
       {
         timeout: this.transactionTimeout, // 10 second timeout
-      }
+      },
     );
 
     for (const contributor of results) {
