@@ -67,8 +67,8 @@ function TranslationDataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       <DataTableToolbar data={data} table={table} />
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border ">
+        <Table className="table-auto w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -89,7 +89,7 @@ function TranslationDataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="max-w-xs ">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
