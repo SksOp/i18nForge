@@ -202,6 +202,14 @@ const RepoList = ({ installation }: { installation: Installation }) => {
     setPage((prev) => prev + 1);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="border rounded-md divide-y">
       {repositories && repositories.length > 0 ? (
