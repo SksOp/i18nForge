@@ -10,7 +10,7 @@
     "generate": "npx prisma generate",
     "migrate": "npx dotenv-cli -e .env.local -- npx prisma migrate dev",
     "reset:production": "npx prisma migrate reset --force",
-    "smee": "smee -P /api/github/webhook -p 3000",
+    "smee": "smee -P /api/github/webhook -u https://smee.io/YV0EL31OPX92ejzr -p 3000",
     "deploy": "npm run generate && npm run build  && npm run migrate",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
