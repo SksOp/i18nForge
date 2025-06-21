@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  optimizePackageImports: ['@prisma/client'],
 };
 
 export default nextConfig;
