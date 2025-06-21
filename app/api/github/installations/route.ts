@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
 import { authOptions } from '../../auth/[...nextauth]/auth';
-import { GetGitHubAccessTokenViaApp } from '../../global.utils';
 import { getAllOrgInstallations, getUserOrgs, getUserSelfInstallation } from '../utils';
 import { mapInstallation } from './utils';
 
