@@ -29,6 +29,7 @@ interface BuildTranslationColumnsParams {
     onResult: (newVal: string) => void,
   ) => void;
   handleUndo: (key: string, language: string) => void;
+  invalidLangs: string[];
 }
 
 export function buildTranslationColumns({
@@ -43,6 +44,7 @@ export function buildTranslationColumns({
   setEditValue,
   handleAI,
   handleUndo,
+  invalidLangs,
 }: BuildTranslationColumnsParams): ColumnDef<TranslationEntry>[] {
   return [
     {
@@ -59,29 +61,32 @@ export function buildTranslationColumns({
         const entry = row.original;
         const key = entry.key;
         const value = getEditedValue(key, lang) ?? entry[lang] ?? '';
+        const isInvalid = invalidLangs.includes(lang);
         const isEditing = editingCell?.key === key && editingCell?.language === lang;
         const isEdited = isCellEdited(key, lang);
 
         const handleCellClickWrapper = () => handleCellClick(key, lang, value);
 
         return (
-          <TranslationCellEditor
-            value={value}
-            editValue={editValue}
-            isEditing={isEditing}
-            isEdited={isEdited}
-            isAIProcessing={isAIProcessing}
-            onCellClick={handleCellClickWrapper}
-            onEditChange={setEditValue}
-            onCommitEdit={commitEdit}
-            onUndo={() => handleUndo(key, lang)}
-            onAITranslate={(currValue, setLocalVal) => {
-              const translations = Object.fromEntries(
-                fileNames.map((l) => [l, getEditedValue(key, l) ?? entry[l] ?? '']),
-              );
-              handleAI(key, translations, lang, setLocalVal);
-            }}
-          />
+          <div className={cn(isInvalid && 'bg-red-200')}>
+            <TranslationCellEditor
+              value={value}
+              editValue={editValue}
+              isEditing={isEditing}
+              isEdited={isEdited}
+              isAIProcessing={isAIProcessing}
+              onCellClick={handleCellClickWrapper}
+              onEditChange={setEditValue}
+              onCommitEdit={commitEdit}
+              onUndo={() => handleUndo(key, lang)}
+              onAITranslate={(currValue, setLocalVal) => {
+                const translations = Object.fromEntries(
+                  fileNames.map((l) => [l, getEditedValue(key, l) ?? entry[l] ?? '']),
+                );
+                handleAI(key, translations, lang, setLocalVal);
+              }}
+            />
+          </div>
         );
       },
     })),
