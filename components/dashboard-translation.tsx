@@ -7,6 +7,7 @@ import { queryClient } from '@/state/client';
 import { getFileContent, projectQuery } from '@/state/query/project';
 import { TranslationEntry } from '@/types/translations';
 import { useQuery } from '@tanstack/react-query';
+import { jsonrepair } from 'jsonrepair';
 import { Loader, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,6 +19,7 @@ import TranslationCommitDiff from './translation-commitDiff';
 import TranslationDataTable from './translation-dataTable';
 import { buildTranslationColumns } from './translationTable-column';
 import { Button } from './ui/button';
+import { Card, CardTitle } from './ui/card';
 import {
   Dialog,
   DialogContent,
@@ -59,6 +61,8 @@ function DashboardTranslation({ id }: { id: string }) {
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitMessage, setCommitMessage] = useState('');
   const [originalFileContents, setOriginalFileContents] = useState<Record<string, any>>({});
+  const [invalidRawContent, setInvalidRawContent] = useState<Record<string, string>>({});
+  const [invalidLangs, setInvalidLangs] = useState<string[]>([]);
   const [isCommitDialogOpen, setIsCommitDialogOpen] = useState(false);
   const { data: fileContent, isLoading: fileContentLoading } = useQuery(
     getFileContent(id as string, session?.accessToken || '', selectedBranch || 'main'),
@@ -261,6 +265,7 @@ function DashboardTranslation({ id }: { id: string }) {
         setEditValue,
         handleAI,
         handleUndo,
+        invalidLangs,
       }),
     [
       fileNames,
@@ -274,11 +279,15 @@ function DashboardTranslation({ id }: { id: string }) {
       setEditValue,
       handleAI,
       handleUndo,
+      invalidLangs,
     ],
   );
 
   useEffect(() => {
     const table: Record<string, any> = {};
+    const invalidFiles: string[] = [];
+    const invalidRaw: Record<string, string> = {};
+
     if (fileContent?.fileContent) {
       project?.paths.forEach((path, index) => {
         try {
@@ -290,14 +299,17 @@ function DashboardTranslation({ id }: { id: string }) {
           }
         } catch (error) {
           console.error(`Error parsing content for ${path.language}:`, error);
+          invalidFiles.push(path.language);
+          invalidRaw[path.language] = fileContent.fileContent[index].content;
+          table[path.language] = {}; // so column renders
         }
       });
-      const fileNames = Object.keys(table);
-      setFileNames(fileNames);
-      const tableData = createTableData(table);
-      setDataForTable(tableData);
+
+      setFileNames(project?.paths.map((p) => p.language) || []);
+      setDataForTable(createTableData(table));
+      setInvalidLangs(invalidFiles);
+      setInvalidRawContent(invalidRaw);
     }
-    console.log('dataForTable', JSON.stringify(table, null, 2));
   }, [fileContent, project, selectedBranch]);
 
   useEffect(() => {
@@ -448,6 +460,40 @@ function DashboardTranslation({ id }: { id: string }) {
     setCommitMessage('');
   };
 
+  const handleFixJson = async (lang: string) => {
+    try {
+      const brokenJson = invalidRawContent[lang];
+      const fixed = jsonrepair(brokenJson);
+      const parsed = JSON.parse(fixed);
+
+      const res = await fetch(
+        `/api/project/meta/commit?id=${id}&message=fix-invalid-json-${lang}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-accessToken': session?.accessToken || '',
+          },
+          body: JSON.stringify({
+            branch: selectedBranch || 'main',
+            content: [{ path: lang, content: JSON.stringify(parsed, null, 2) }],
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err?.error || 'Commit failed');
+      }
+
+      toast.success(`Fixed and committed ${lang} successfully`);
+      queryClient.invalidateQueries({ queryKey: ['fileContent', id] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Fixing failed: ${err.message}`);
+    }
+  };
+
   return (
     <div className=" h-full flex-1 flex-col space-y-8 p-8 flex">
       <div className="flex items-center justify-between space-y-2">
@@ -519,6 +565,49 @@ function DashboardTranslation({ id }: { id: string }) {
           </Dialog>
         </div>
       </div>
+      {invalidLangs.length > 0 && (
+        <Card className="bg-yellow-100 text-yellow-800 p-4 rounded-md">
+          <CardTitle className="font-semibold">Invalid translation files detected:</CardTitle>
+          <ul className="list-disc ml-5 my-2">
+            {invalidLangs.map((lang) => (
+              <li key={lang}>
+                <span className="font-mono">{lang}</span>
+                <Dialog>
+                  <DialogTrigger>
+                    <Button
+                      size="sm"
+                      className="ml-3"
+                      variant="secondary"
+                      // onClick={() => handleFixJson(lang)}
+                    >
+                      Fix & Commit
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Invalid JSON in {lang}</DialogTitle>
+                      <DialogDescription>
+                        The file for {lang} contains invalid JSON. Click "Fix & Commit" to repair it
+                        automatically.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        onClick={() => handleFixJson(lang)}
+                        disabled={isCreatingBranch}
+                      >
+                        {isCreatingBranch ? 'Fixing...' : 'Fix & Commit'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <TranslationDataTable
         data={dataForTable}
         columns={columns}
