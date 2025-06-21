@@ -1,61 +1,87 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import React from 'react';
 
-import { getFileContent, projectQuery } from '@/state/query/project';
+import Layout from '@/layout/layout';
+import { dashboardQuery, projectQuery } from '@/state/query/project';
 import { useQuery } from '@tanstack/react-query';
-import { Edit, Loader } from 'lucide-react';
 
-import TranslationsPage from '@/components/translation';
+import DashboardMain from '@/components/dashboard-main';
+import DashboardSettings from '@/components/dashboard-settings';
+import DashboardTranslation from '@/components/dashboard-translation';
+import DeleteProject from '@/components/deleteProject';
+import Spinner from '@/components/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export default function ProjectPage() {
+function DashboardPage() {
   const params = useParams();
-
   const { data: project, isLoading, error } = useQuery(projectQuery(params.id as string));
-  const { data: session } = useSession();
-  const { data: fileContent, isLoading: fileContentLoading } = useQuery(
-    getFileContent(params.id as string, session?.accessToken || ''),
+  const { data: dashboard, isLoading: dashboardLoading } = useQuery(
+    dashboardQuery(params.id as string),
   );
-  const [dataForTable, setDataForTable] = useState<Record<string, any>>({});
 
-  useEffect(() => {
-    const table: Record<string, any> = {};
-    if (fileContent?.fileContent) {
-      project?.paths.forEach((path, index) => {
-        try {
-          const content = fileContent.fileContent[index].content;
-          if (typeof content === 'object') {
-            table[path.language] = content;
-          } else if (typeof content === 'string') {
-            table[path.language] = JSON.parse(content);
-          }
-        } catch (error) {
-          console.error(`Error parsing content for ${path.language}:`, error);
-        }
-      });
+  console.log('dashboard', dashboard);
 
-      setDataForTable(table);
-    }
-    console.log('dataForTable', JSON.stringify(table, null, 2));
-  }, [fileContent, project]);
-
-  if (isLoading || fileContentLoading) {
+  if (isLoading || dashboardLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader className="h-8 w-8 animate-spin" />
+        <Spinner />
       </div>
     );
   }
 
-  return (
-    <div>
-      <TranslationsPage
-        files={dataForTable}
-        userName={project?.owner ?? ' '}
-        repoName={project?.repoName ?? ' '}
-      />
+  const InfoTile = ({ title, value, subtitle, icon }) => (
+    <div className="bg-white rounded-lg border p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        </div>
+        {icon && <div className="text-gray-400">{icon}</div>}
+      </div>
     </div>
   );
+
+  return (
+    <Layout>
+      <h1 className="text-2xl font-bold mb-4">Project Dashboard</h1>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="bg-white flex gap-4">
+          <TabsTrigger
+            value="overview"
+            className="cursor-pointer border-0 data-[state=active]:border-b-2 data-[state=active]:border-b-black hover:border-b-black focus:border-b-black shadow-none"
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="translations"
+            className="cursor-pointer border-0 data-[state=active]:border-b-2 data-[state=active]:border-b-black hover:border-b-black focus:border-b-black shadow-none"
+          >
+            Translations
+          </TabsTrigger>
+          <TabsTrigger
+            value="settings"
+            className="cursor-pointer border-0 data-[state=active]:border-b-2 data-[state=active]:border-b-black hover:border-b-black focus:border-b-black shadow-none"
+          >
+            Settings
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
+          <DashboardMain data={dashboard} />
+        </TabsContent>
+        <TabsContent value="translations">
+          {' '}
+          <DashboardTranslation id={project.id} />{' '}
+        </TabsContent>
+        <TabsContent value="settings">
+          <DashboardSettings id={project.id} />
+          <DeleteProject id={project.id} />
+        </TabsContent>
+      </Tabs>
+    </Layout>
+  );
 }
+
+export default DashboardPage;
