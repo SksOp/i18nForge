@@ -49,14 +49,21 @@ export async function DELETE(_request: Request, data: { params: Params }) {
   try {
     const params = await data.params;
     const { id } = params;
-    await prisma.project.delete({
-      where: {
-        id,
-      },
-    });
+    await prisma.$transaction([
+      prisma.contributorToProject.deleteMany({
+        where: {
+          projectId: id,
+        },
+      }),
+      prisma.project.delete({
+        where: {
+          id,
+        },
+      }),
+    ]);
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete project ', reason: error }, { status: 500 });
   }
 }
