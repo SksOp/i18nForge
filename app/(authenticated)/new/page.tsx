@@ -34,7 +34,6 @@ export default function HomePage() {
   const { data, isLoading } = useSuspenseQuery(installationsQuery());
   const [selectedInstallation, setSelectedInstallation] = useState<string>(data[0]?.id);
   const [searchQuery, setSearchQuery] = useState('');
-  // console.log("data", data);
   const installation = data?.find((installation) => installation.id === selectedInstallation);
 
   if (isLoading) {
@@ -44,10 +43,6 @@ export default function HomePage() {
       </div>
     );
   }
-
-  const filteredRepos = data.filter((repo) =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
 
   return (
     <Layout className="container mx-auto mt-8 px-4">
@@ -157,6 +152,8 @@ const RepoList = ({ installation }: { installation: Installation }) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
+  const [isImportLoading, setIsImportLoading] = useState(false);
+
   const [importedProjectIds, setImportedProjectIds] = useState<Record<number, string | null>>({});
 
   const { data: repositories, isLoading } = useQuery(
@@ -171,13 +168,15 @@ const RepoList = ({ installation }: { installation: Installation }) => {
     const checkAllProjects = async () => {
       if (!repositories) return;
 
-      const results = await Promise.all(
-        repositories.map((repo) => checkForExistingProject(repo, installation)),
+      const repoNames = repositories.map(
+        (repo) => `${installation?.name}/${repo.name}`
       );
 
+      const results: { isExisting: boolean; projects: { name: string; id: string }[] } = await checkForExistingProjects(repoNames);
+      
       const newStatus: Record<number, string | null> = {};
-      results.forEach((result, i) => {
-        newStatus[repositories[i].id] = result?.projectId ?? null;
+      repositories.forEach((repo, i) => {
+        newStatus[repo.name] = results?.projects.find((project) => project.name === repo.name)?.id ?? null;
       });
       setImportedProjectIds((prev) => ({ ...prev, ...newStatus }));
     };
@@ -185,18 +184,41 @@ const RepoList = ({ installation }: { installation: Installation }) => {
     checkAllProjects();
   }, [repositories]);
 
-  const checkForExistingProject = async (repo: Repository, installation: Installation) => {
+  const checkForExistingProjects = async (names: string[]) => {
     const res = await fetch(`/api/project/check`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: `${installation?.name}/${repo.name}`,
+        names,
       }),
     });
     return await res.json();
   };
+
+  const checkForExistingProject = async (repo: Repository, installation: Installation) => {
+    setIsImportLoading(true);
+    try {
+      const res = await fetch(`/api/project/check`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          names: [`${installation?.name}/${repo.name}`],
+        }),
+      });
+      const result = await res.json();
+      return result?.[`${installation?.name}/${repo.name}`];
+    } catch (error) {
+      setIsImportLoading(false);
+      toast.error('Failed to check project status');
+    return null;
+  } finally {
+    setIsImportLoading(false);  
+  }
+}
 
   const handleLoadMore = () => {
     setPage((prev) => prev + 1);
@@ -215,8 +237,7 @@ const RepoList = ({ installation }: { installation: Installation }) => {
       {repositories && repositories.length > 0 ? (
         <>
           {repositories.map((repo: Repository) => {
-            const alreadyImported = importedProjectIds[repo.id];
-
+            const alreadyImported = importedProjectIds[repo.name];
             return (
               <div
                 key={repo.id}
@@ -244,7 +265,13 @@ const RepoList = ({ installation }: { installation: Installation }) => {
                     }
                   }}
                 >
-                  {alreadyImported ? 'Imported' : 'Import'}
+                    {isImportLoading ? (
+                      <Loader className="animate-spin w-4 h-4 mr-2" />
+                    ) : alreadyImported ? (
+                      'Imported'
+                    ) : (
+                      'Import'
+                    )}
                 </Button>
               </div>
             );
