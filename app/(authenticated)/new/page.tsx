@@ -168,15 +168,15 @@ const RepoList = ({ installation }: { installation: Installation }) => {
     const checkAllProjects = async () => {
       if (!repositories) return;
 
-      const repoNames = repositories.map(
-        (repo) => `${installation?.name}/${repo.name}`
-      );
+      const repoNames = repositories.map((repo) => `${installation?.name}/${repo.name}`);
 
-      const results: { isExisting: boolean; projects: { name: string; id: string }[] } = await checkForExistingProjects(repoNames);
-      
+      const results: { isExisting: boolean; projects: { name: string; id: string }[] } =
+        await checkForExistingProjects(repoNames);
+
       const newStatus: Record<number, string | null> = {};
       repositories.forEach((repo, i) => {
-        newStatus[repo.name] = results?.projects.find((project) => project.name === repo.name)?.id ?? null;
+        newStatus[repo.name] =
+          results?.projects.find((project) => project.name === repo.name)?.id ?? null;
       });
       setImportedProjectIds((prev) => ({ ...prev, ...newStatus }));
     };
@@ -214,11 +214,11 @@ const RepoList = ({ installation }: { installation: Installation }) => {
     } catch (error) {
       setIsImportLoading(false);
       toast.error('Failed to check project status');
-    return null;
-  } finally {
-    setIsImportLoading(false);  
-  }
-}
+      return null;
+    } finally {
+      setIsImportLoading(false);
+    }
+  };
 
   const handleLoadMore = () => {
     setPage((prev) => prev + 1);
@@ -265,13 +265,13 @@ const RepoList = ({ installation }: { installation: Installation }) => {
                     }
                   }}
                 >
-                    {isImportLoading ? (
-                      <Loader className="animate-spin w-4 h-4 mr-2" />
-                    ) : alreadyImported ? (
-                      'Imported'
-                    ) : (
-                      'Import'
-                    )}
+                  {isImportLoading ? (
+                    <Loader className="animate-spin w-4 h-4 mr-2" />
+                  ) : alreadyImported ? (
+                    'Imported'
+                  ) : (
+                    'Import'
+                  )}
                 </Button>
               </div>
             );

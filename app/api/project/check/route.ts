@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       projects: existingProjects.map((project) => {
         return {
           name: project.repoName,
-          id: project.id
+          id: project.id,
         };
       }),
     });
