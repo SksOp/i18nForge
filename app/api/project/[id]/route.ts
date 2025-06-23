@@ -64,6 +64,9 @@ export async function DELETE(_request: Request, data: { params: Params }) {
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete project ', reason: error }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete project ', reason: error },
+      { status: 500 },
+    );
   }
 }
