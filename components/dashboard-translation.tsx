@@ -467,7 +467,7 @@ function DashboardTranslation({ id }: { id: string }) {
       const parsed = JSON.parse(fixed);
 
       const res = await fetch(
-        `/api/project/meta/commit?id=${id}&message=fix-invalid-json-${lang}`,
+        `/api/project/meta/commit?id=${id}&message=fixed invalid json for ${lang}`,
         {
           method: 'POST',
           headers: {
