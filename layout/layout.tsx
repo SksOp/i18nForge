@@ -1,10 +1,11 @@
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React from 'react';
 
 import { ClassValue } from 'clsx';
-import { LogOutIcon } from 'lucide-react';
+import { LogOutIcon, PlusIcon } from 'lucide-react';
 
+import { ModeToggle } from '@/components/theme-toggle.button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,23 +20,36 @@ import { cn } from '@/lib/utils';
 function Layout({ children, className }: { children: React.ReactNode; className?: ClassValue }) {
   const session = useSession();
   const router = useRouter();
-
+  const isLoggedIn = session.data?.user;
   const handleLogout = () => {
     router.push('/auth/logout');
   };
+  const path = usePathname();
+  const isAtRoot = path === '/';
   return (
     <div className="min-h-screen">
       {' '}
-      <div className="fixed top-0 z-50 w-full bg-white flex items-center justify-between p-4 px-6 lg:px-10 border-b shadow-sm">
-        <div onClick={() => router.push('/')} className="flex items-center cursor-pointer">
-          <img src="/logo.svg" alt="Logo" className="h-6 w-6 object-cover" />
+      <div className="fixed top-0 z-50 w-full  flex items-center justify-between p-4 px-6 lg:px-10 border-b  bg-background/60 backdrop-blur-sm">
+        <div
+          onClick={() => router.push(isLoggedIn ? '/home' : '/')}
+          className="flex items-center cursor-pointer"
+        >
+          <img src="/logo.svg" alt="Logo" className="h-7 w-7 object-cover border rounded-full" />
         </div>
-        <div />
+        <div className="flex-grow" />
+        <div className="mr-3">
+          <ModeToggle />
+        </div>
+        {isAtRoot && (
+          <Button variant={'default'} onClick={() => router.push('/home')} className="mr-3">
+            Dashboard
+          </Button>
+        )}
         {session.data ? (
-          <div className="flex items-center justify-end gap-6 w-full">
+          <div className="flex items-center justify-end gap-6">
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <Avatar className="w-6 h-6 ">
+                <Avatar className="w-8 h-8 ">
                   <AvatarImage src={session.data?.image || ''} alt="User" />
                   <AvatarFallback className="text-xs">
                     {session.data?.username && session.data?.username[0]}
@@ -43,7 +57,7 @@ function Layout({ children, className }: { children: React.ReactNode; className?
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-2xl p-0 border-0 w-full">
-                <Card className="bg-white rounded-2xl shadow-[0px_4px_19px_0px_rgba(0,0,0,0.12)] px-10 border-0 py-4 flex flex-col gap-4 w-full">
+                <Card className=" rounded-2xl shadow-[0px_4px_19px_0px_rgba(0,0,0,0.12)] px-10 border-0 py-4 flex flex-col gap-4 w-full">
                   <CardHeader className="px-4 flex flex-col items-center justify-center gap-2">
                     <Avatar>
                       <AvatarImage src={session.data?.image || ''} alt="User" />

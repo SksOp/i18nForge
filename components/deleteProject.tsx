@@ -9,6 +9,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -33,10 +34,10 @@ function DeleteProject({ id }: { id: string }) {
   });
 
   return (
-    <Card className="border border-red-600 bg-red-50 p-4 flex flex-col gap-3  mt-4">
+    <Card className="border border-red-600 p-4 flex flex-col gap-3  mt-4">
       <h3 className="text-red-600 text-md font-semibold ">Danger Zone</h3>
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm">
           Once you delete a project, there is no going back. Please be certain.
         </p>
         <Dialog>
@@ -47,14 +48,16 @@ function DeleteProject({ id }: { id: string }) {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-red-600">Delete this project?</DialogTitle>
+              <DialogTitle className="text-destructive">Delete this project?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-gray-700">
-              This action <span className="font-semibold text-red-600">cannot</span> be undone. This
-              will permanently delete the project and remove all associated data.
+            <p className="text-sm">
+              This action <span className="font-semibold text-destructive">cannot</span> be undone.
+              This will permanently delete the project and remove all associated data.
             </p>
             <DialogFooter className="mt-4">
-              <Button variant="outline">Cancel</Button>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
               <Button variant="destructive" disabled={isDeleting} onClick={() => deleteProject()}>
                 {isDeleting ? 'Deleting...' : 'Yes, delete project'}
               </Button>

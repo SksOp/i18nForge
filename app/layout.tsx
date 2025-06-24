@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 
 import { ClientLayout } from './client-layout';
 import './globals.css';
@@ -27,7 +26,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-      // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className="no-scrollbar"
       >
         <ClientLayout>{children}</ClientLayout>
       </body>

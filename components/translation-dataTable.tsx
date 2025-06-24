@@ -67,14 +67,18 @@ function TranslationDataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       <DataTableToolbar data={data} table={table} />
-      <div className="rounded-md border ">
+      <div className="rounded-md border overflow-hidden">
         <Table className="table-auto w-full">
-          <TableHeader>
+          <TableHeader className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
+                    <TableHead
+                      className="text-xs font-medium text-muted-foreground "
+                      key={header.id}
+                      colSpan={header.colSpan}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}

@@ -8,9 +8,18 @@ import Layout from '@/layout/layout';
 import { projectsQuery } from '@/state/query/project';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Github, Plus, User } from 'lucide-react';
+import { Building2, ExternalLink, FileText, Github, Plus, User } from 'lucide-react';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 export default function HomePage() {
   const { data: projects } = useSuspenseQuery(projectsQuery());
@@ -22,63 +31,85 @@ export default function HomePage() {
     }
   }, [projects]);
 
+  if (!projects || projects.length === 0 || projects.length === undefined) {
+    return null;
+  }
+
   return (
     <Layout className="container mx-auto mt-8 px-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Your Projects</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Your Projects</h1>
+          <p className="text-muted-foreground mt-1">Manage and monitor your translation projects</p>
+        </div>
         <Link href="/new">
           <Button>
-            {' '}
-            <Plus />
+            <Plus className="mr-2 h-4 w-4" />
             Add New Project
           </Button>
         </Link>
       </div>
 
       {projects.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">No projects found</p>
-          <Link href="/new">
-            <Button>Create Your First Project</Button>
-          </Link>
-        </div>
+        <Card className="text-center py-12">
+          <CardContent>
+            <p className="text-muted-foreground mb-4">No projects found</p>
+            <Link href="/new">
+              <Button>Create Your First Project</Button>
+            </Link>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => {
             const githubRepoUrl = `https://github.com/${project.name}`;
             const githubProfileUrl = `https://github.com/${project.owner}`;
             const createdAtFormatted = format(new Date(project.createdAt), 'PPP');
+            const languageCount = project.paths?.length || 0;
 
             return (
-              <div
+              <Card
                 key={project.id}
-                className="p-6 rounded-lg border hover:border-primary transition-colors"
+                className="hover:border-primary transition-all cursor-pointer"
                 onClick={() => router.push(`/projects/${project.id}`)}
               >
-                <Link
-                  href={githubRepoUrl}
-                  target="_blank"
-                  className="flex items-center space-x-2 text-lg font-semibold hover:underline w-fit"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Github size={18} />
-                  <span>{project.name}</span>
-                </Link>
-
-                <Link
-                  href={githubProfileUrl}
-                  target="_blank"
-                  className="mt-2 flex items-center space-x-2 text-sm text-muted-foreground hover:underline w-fit"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <User size={16} />
-                  <span>{project.owner}</span>
-                </Link>
-
-                <p className="text-xs text-muted-foreground mt-2">
-                  Created on: {createdAtFormatted}
-                </p>
-              </div>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Github className="h-5 w-5" />
+                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                    </div>
+                    <Link href={githubRepoUrl} target="_blank" onClick={(e) => e.stopPropagation()}>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                    </Link>
+                  </div>
+                  <Link
+                    href={githubProfileUrl}
+                    target="_blank"
+                    className="flex items-center space-x-2 text-sm text-muted-foreground hover:underline w-fit"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {project.ownerType === 'user' ? (
+                      <User className="h-4 w-4" />
+                    ) : (
+                      <Building2 className="h-4 w-4" />
+                    )}
+                    <span>{project.owner}</span>
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-4 text-sm">
+                    <Badge variant="secondary" className="flex items-center">
+                      <FileText className="mr-1 h-3 w-3" />
+                      {languageCount} Language Files
+                    </Badge>
+                    <Badge variant="outline">{project.defaultBranch}</Badge>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <p className="text-xs text-muted-foreground">Created on {createdAtFormatted}</p>
+                </CardFooter>
+              </Card>
             );
           })}
         </div>

@@ -117,7 +117,7 @@ export default function ColabClient({ projectId, token }: ColabClientProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <h1 className="text-2xl font-bold mb-4">Join Collaboration</h1>
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6 max-w-md w-full">
+        <div className=" shadow-md rounded-lg p-6 mb-6 max-w-md w-full">
           <p className="mb-4">
             You've been invited to collaborate on <strong>{project?.name}</strong>. Please sign in
             to join the project.
@@ -136,7 +136,7 @@ export default function ColabClient({ projectId, token }: ColabClientProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <h1 className="text-2xl font-bold mb-4">Joining Collaboration</h1>
-      <div className="bg-white shadow-md rounded-lg p-6 mb-6 max-w-md w-full">
+      <div className=" shadow-md rounded-lg p-6 mb-6 max-w-md w-full">
         <p className="mb-4">
           You're being added as a collaborator to <strong>{project?.name}</strong>.
         </p>
