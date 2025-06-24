@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import { cn } from '@/lib/utils';
 
@@ -194,7 +195,7 @@ function FilePathInput({
       {showSuggestions && fileTree && (
         <div
           ref={suggestionsRef}
-          className="absolute z-10 mt-1 w-full max-h-60 overflow-auto bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700"
+          className="absolute z-10 mt-1 w-full max-h-60 overflow-auto  dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700"
         >
           {Array.isArray(fileTree) && fileTree.length > 0 ? (
             <ul className="py-1">
@@ -304,19 +305,23 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
   };
 
   return (
-    <Card className="shadow-sm max-w-3xl ">
+    <Card className="shadow-sm max-w-3xl w-full">
       <CardContent className="p-6">
         <h1 className="text-2xl font-bold mb-6">
           Create Project for{' '}
           <span className="text-primary">
             {owner}/{repo}
           </span>
-          <span className="ml-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
-            {branch}
-          </span>
+          {branch ? (
+            <span className="ml-2 text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+              {branch}
+            </span>
+          ) : (
+            <Skeleton className="w-20 h-4 inline-block ml-2" />
+          )}
         </h1>
         <Separator className="mb-6" />
-        <div className="mb-6 z-40 bg-white">
+        <div className="mb-6 z-40 ">
           <BranchList
             repoName={repo}
             userName={owner}
@@ -325,69 +330,77 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
             }}
           />
         </div>
+        {branch && (
+          <>
+            <p className="text-sm text-muted-foreground mb-4">
+              Note: All paths should start with / representing the root of your repository. Click in
+              the field or type / to browse files.
+            </p>
 
-        <p className="text-sm text-muted-foreground mb-4">
-          Note: All paths should start with / representing the root of your repository. Click in the
-          field or type / to browse files.
-        </p>
-
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex gap-4 items-start">
-              <div className="flex-1 space-y-2">
-                <Controller
-                  control={form.control}
-                  name={`langFiles.${index}.path`}
-                  render={({ field, fieldState }) => (
-                    <FilePathInput
-                      value={field.value}
-                      onChange={field.onChange}
-                      owner={owner}
-                      repo={repo}
-                      branch={branch ?? defaultBranch ?? ''}
-                      error={fieldState.error?.message}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex gap-4 items-start">
+                  <div className="flex-1 space-y-2">
+                    <Controller
+                      control={form.control}
+                      name={`langFiles.${index}.path`}
+                      render={({ field, fieldState }) => (
+                        <FilePathInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          owner={owner}
+                          repo={repo}
+                          branch={branch ?? defaultBranch ?? ''}
+                          error={fieldState.error?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </div>
-              <div className="space-y-2">
-                <Input
-                  className="max-w-xs"
-                  placeholder="Language (e.g., English)"
-                  {...form.register(`langFiles.${index}.language`)}
-                />
-                {form.formState.errors.langFiles?.[index]?.language && (
-                  <p className="text-sm text-red-500">
-                    {form.formState.errors.langFiles[index]?.language?.message}
-                  </p>
-                )}
-              </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      className="max-w-xs"
+                      placeholder="Language (e.g., English)"
+                      {...form.register(`langFiles.${index}.language`)}
+                    />
+                    {form.formState.errors.langFiles?.[index]?.language && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.langFiles[index]?.language?.message}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => remove(index)}
+                    className="shrink-0 mt-1"
+                    disabled={fields.length <= 1}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
               <Button
                 type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => remove(index)}
-                className="shrink-0 mt-1"
-                disabled={fields.length <= 1}
+                variant="outline"
+                className="w-full mt-4"
+                onClick={() => append({ path: '/', language: '' })}
+                disabled={!branch}
               >
-                <X className="h-4 w-4" />
+                Add Another File
               </Button>
-            </div>
-          ))}
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full mt-4"
-            onClick={() => append({ path: '/', language: '' })}
-          >
-            Add Another File
-          </Button>
-
-          <Button type="submit" className="w-full">
-            Create Project
-          </Button>
-        </form>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!branch || createProjectMutation.isPending}
+              >
+                Create Project
+              </Button>
+            </form>
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -39,10 +39,6 @@ export default function BranchList({ repoName, userName, onSelect }: BranchListP
   const { data: session, status } = useSession();
   const [defaultBranch, setDefaultBranch] = useState('');
 
-  if (!userName || !repoName) {
-    return null;
-  }
-
   const { data: branchData, isLoading } = useQuery<BranchData>({
     queryKey: ['branches', userName, repoName, session?.accessToken],
     queryFn: async () => {
@@ -74,6 +70,9 @@ export default function BranchList({ repoName, userName, onSelect }: BranchListP
     }
   }, [branchData, onSelect]);
 
+  if (!userName || !repoName) {
+    return null;
+  }
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-4">

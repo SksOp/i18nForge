@@ -9,7 +9,7 @@ interface Project {
   createdAt: Date;
   updatedAt: Date;
   ownerType: string;
-  branch: string;
+  defaultBranch: string;
   repoName: string;
   paths: Array<{ path: string; language: string }>;
   userId: string;

@@ -29,10 +29,10 @@ export default function LandingPage() {
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
                   Seamless i18n Management for Your Website
                 </h1>
-                <p className="max-w-[600px] text-foreground/80 md:text-xl">
-                  Say goodbye to messy translation files! Effortlessly manage, sync, and collaborate
-                  on i18n files with GitHub integration. Ensure consistency across all languages—no
-                  missing keys, no manual hassle.
+                <p className="max-w-[600px] text-foreground/80 md:text-lg">
+                  Say goodbye to managing messy translation files! Effortlessly manage, sync, and
+                  collaborate on i18n files with GitHub integration. Ensure consistency across all
+                  languages—no missing keys, no manual hassle.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -97,13 +97,11 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="bg-muted/50 py-20" id="pricing">
+      {/* <section className="bg-muted/50 py-20" id="pricing">
         <div className="container mx-auto px-4 md:px-6">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Pricing</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Choose the plan that fits your needs
-            </p>
+            <p className="mt-4 text-lg text-muted-foreground">Coming Soon</p>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
             <PricingCard
@@ -151,19 +149,19 @@ export default function LandingPage() {
             />
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
-      <footer className="bg-primary py-12 text-primary-foreground/80">
+      <footer className="bg-background py-12 border-t border-border">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <h3 className="mb-4 text-lg font-medium text-primary-foreground">i18n Forge</h3>
+              <h3 className="mb-4 text-lg font-medium ">i18n Forge</h3>
               <p className="text-sm">
                 Seamless i18n management for your website. Say goodbye to messy translation files!
               </p>
             </div>
-            <div>
+            {/* <div>
               <h3 className="mb-4 text-lg font-medium text-primary-foreground">Product</h3>
               <ul className="space-y-2 text-sm">
                 <li>
@@ -171,7 +169,7 @@ export default function LandingPage() {
                     Features
                   </a>
                 </li>
-                <li>
+                 <li>
                   <a href="#pricing" className="hover:text-primary-foreground">
                     Pricing
                   </a>
@@ -180,10 +178,10 @@ export default function LandingPage() {
                   <a href="#" className="hover:text-primary-foreground">
                     Roadmap
                   </a>
-                </li>
+                </li> 
               </ul>
-            </div>
-            <div>
+            </div> */}
+            {/* <div>
               <h3 className="mb-4 text-lg font-medium text-primary-foreground">Resources</h3>
               <ul className="space-y-2 text-sm">
                 <li>
@@ -227,7 +225,7 @@ export default function LandingPage() {
                   </a>
                 </li>
               </ul>
-            </div>
+            </div> */}
           </div>
           <div className="mt-12 border-t border-primary-foreground/20 pt-8 text-center text-sm">
             <p>© {new Date().getFullYear()} i18n Forge. All rights reserved.</p>

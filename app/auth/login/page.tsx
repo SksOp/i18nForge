@@ -51,12 +51,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white text-gray-900 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen  text-gray-900 p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex item-center justify-center">
           <img src="/logo.svg" alt="Logo" className="h-6 w-6 object-cover" />
         </div>
-        <Card className="bg-white border-gray-200 shadow-sm">
+        <Card className=" border-gray-200 shadow-sm">
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl text-center">Log in to i18nForge</CardTitle>
             <CardDescription className="text-gray-500 text-center">
@@ -67,7 +67,7 @@ export default function LoginPage() {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full bg-white border-gray-200 hover:bg-gray-50 text-gray-800 flex items-center justify-center gap-2 h-11"
+                className="w-full   flex items-center justify-center gap-2 h-11"
                 onClick={handleSignIn}
               >
                 <Github className="h-4 w-4" />

@@ -16,6 +16,7 @@ import Spinner from '@/components/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -53,8 +54,8 @@ export default function HomePage() {
         </p>
       </div>
       <Separator className="mb-6" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-h-[60vh]">
-        <Card className="shadow-sm max-h-[60vh] overflow-y-auto">
+      <div className="">
+        <Card className="shadow-sm mx-auto max-w-3xl w-full">
           <CardContent className="p-6">
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-4">Import Git Repository</h2>
@@ -93,7 +94,6 @@ export default function HomePage() {
                 </SelectContent>
               </Select>
             </div>
-
             {data && data.length > 0 ? (
               <div className="space-y-4">
                 <div className="relative">
@@ -105,8 +105,9 @@ export default function HomePage() {
                     className="pl-10"
                   />
                 </div>
-
-                {installation && <RepoList installation={installation} />}
+                <ScrollArea className="h-[35vh]">
+                  {installation && <RepoList installation={installation} />}
+                </ScrollArea>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12">
@@ -131,7 +132,7 @@ export default function HomePage() {
             )}
           </CardContent>
         </Card>
-        <Card className="shadow-sm max-h-[60vh] overflow-y-auto">
+        {/* <Card className="shadow-sm max-h-[60vh] overflow-y-auto">
           <CardContent className="p-6">
             <h2 className="text-xl font-semibold mb-4">Clone Template</h2>
             <p className="text-muted-foreground mb-4">
@@ -141,7 +142,7 @@ export default function HomePage() {
               <Link href="#">Browse Templates</Link>
             </Button>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </Layout>
   );

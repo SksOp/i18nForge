@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Clock, Code, GitCommit, Languages, Users } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 type DashboardData = {
   dashboard: {
@@ -72,13 +72,13 @@ export default function DashboardMain({ data }: { data: DashboardData }) {
 
   return (
     <motion.div
-      className="space-y-6"
+      className="space-y-6 mt-2"
       initial="hidden"
       animate="visible"
       variants={staggerContainer}
     >
       {/* Stats Grid */}
-      <motion.div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" variants={fadeIn}>
+      <motion.div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" variants={fadeIn}>
         {/* <Card className="hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Keys</CardTitle>
@@ -129,50 +129,62 @@ export default function DashboardMain({ data }: { data: DashboardData }) {
       </motion.div>
 
       {/* Recent Activity */}
-      <motion.div variants={fadeIn}>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <CardTitle>Recent Commits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {commits?.length > 0 ? (
-                commits.map((commit, index) => (
-                  <motion.div
-                    key={commit.sha}
-                    className="flex items-start pb-4 border-b last:border-b-0 last:pb-0"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+      <motion.div variants={fadeIn} className="mt-8">
+        <div className="bg-background rounded-lg border">
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Recent Commits</h2>
+                <p className="text-sm text-muted-foreground">
+                  Latest changes to your translation files
+                </p>
+              </div>
+              <GitCommit className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          <div className="divide-y">
+            {commits?.length > 0 ? (
+              commits.map((commit, index) => (
+                <motion.div
+                  key={commit.sha}
+                  className="p-4 hover:bg-muted/50 transition-colors"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <GitCommit className="h-4 w-4 text-primary" />
                     </div>
+
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{commit.message}</p>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <span>{commit.author}</span>
-                        <span className="mx-1">•</span>
+                      <p className="font-medium text-sm mb-1">{commit.message}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-medium">{commit.author}</span>
+                        <span>•</span>
                         <span>{getTimeAgo(commit.date)}</span>
-                        <span className="mx-1">•</span>
                         <a
                           href={commit.githubPreviewUri}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary hover:underline"
+                          className="text-primary hover:text-primary/80 font-medium ml-auto hover:underline"
                         >
                           View on GitHub
                         </a>
                       </div>
                     </div>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">No recent activity</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="py-12 text-center text-muted-foreground">
+                <GitCommit className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                <p>No recent commits found</p>
+              </div>
+            )}
+          </div>
+        </div>
       </motion.div>
     </motion.div>
   );
