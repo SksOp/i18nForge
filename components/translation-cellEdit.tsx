@@ -50,7 +50,7 @@ export const TranslationCellEditor: React.FC<TranslationCellEditorProps> = ({
   };
 
   return (
-    <div className={cn('relative flex items-center gap-2 group', isEdited && 'bg-yellow-50')}>
+    <div className={cn('relative flex items-center gap-2 group', isEdited && 'bg-secondary')}>
       {isEdited && <div className="absolute left-0 top-0 h-full w-1 bg-green-500 rounded-r-md" />}
 
       <div
