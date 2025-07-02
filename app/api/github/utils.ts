@@ -17,20 +17,20 @@ export const getUserOrgs = async (accessToken: string) => {
     const octokit = new Octokit({
       auth: accessToken,
     });
-    console.log("accessToken", accessToken);
+    console.log('accessToken', accessToken);
     const response = await octokit.request('GET /user/orgs', {
       headers: { 'X-GitHub-Api-Version': '2022-11-28' },
     });
 
-    console.log("---------USER ORGS- OCTOKIT--------");
+    console.log('---------USER ORGS- OCTOKIT--------');
     console.log(response.data);
-    console.log("----------------------------");
+    console.log('----------------------------');
     return response.data;
   } catch (error) {
     console.error('Error fetching user organizations:', error);
     throw error;
   }
-}
+};
 
 // export const
 export const getAllOrgInstallations = async (
@@ -39,9 +39,9 @@ export const getAllOrgInstallations = async (
     id: number;
   }[],
 ) => {
-  console.log("------------------------------");
+  console.log('------------------------------');
   console.log('orgs', orgs);
-  console.log("------------------------------");
+  console.log('------------------------------');
   const installations = await prisma.installation.findMany({
     where: {
       githubId: {

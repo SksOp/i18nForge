@@ -21,7 +21,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // app access token 
+    // app access token
     const orgs = await getUserOrgs(session.accessToken); // user access token to get orgs
     // console.log(session);
     const installations = await getAllOrgInstallations(orgs);
