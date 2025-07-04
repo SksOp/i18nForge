@@ -1,7 +1,7 @@
+import { th } from 'date-fns/locale';
 import { gql, request } from 'graphql-request';
 
 import prisma from '@/lib/prisma';
-import { th } from 'date-fns/locale';
 
 export interface FileContentForCommit {
   path: string;

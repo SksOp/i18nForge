@@ -21,7 +21,7 @@ class GitHubTokenGenerator {
   }
 
   private validateConfig(): void {
-    const { installationId, } = this.config;
+    const { installationId } = this.config;
     if (!this.privateKey || !this.appId || !installationId) {
       throw new Error('Missing required GitHub App configuration parameters');
     }

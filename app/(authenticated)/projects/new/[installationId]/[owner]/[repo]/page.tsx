@@ -255,8 +255,15 @@ function FilePathInput({
   );
 }
 
-function ProjectForm({ owner, repo, installationId }: { owner: string; repo: string; installationId: string }) {
-
+function ProjectForm({
+  owner,
+  repo,
+  installationId,
+}: {
+  owner: string;
+  repo: string;
+  installationId: string;
+}) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -461,7 +468,11 @@ export default function NewProjectPage({ params: _params }: { params: Params }) 
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4 flex items-center justify-center  w-full">
-        <ProjectForm owner={params.owner} repo={params.repo} installationId={params.installationId} />
+        <ProjectForm
+          owner={params.owner}
+          repo={params.repo}
+          installationId={params.installationId}
+        />
       </div>
     </Layout>
   );

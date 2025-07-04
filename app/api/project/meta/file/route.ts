@@ -45,9 +45,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ fileContent }, { status: 200 });
   } catch (error) {
     console.error('Error fetching file content:', error);
-    return NextResponse.json({
-      error: `Failed to fetch file content: error: ${error.message}`
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: `Failed to fetch file content: error: ${error.message}`,
+      },
+      { status: 500 },
+    );
   }
 }
 

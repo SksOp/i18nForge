@@ -1,8 +1,5 @@
 import { FileContentForCommit, MetaUtils } from './meta.utils';
 
-
-
-
 export const MetaAPI = {
   getBranchList: (token: string, owner: string, repo: string) => {
     return MetaUtils.getRepositoryBranches(token, owner, repo);

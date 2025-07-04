@@ -578,7 +578,7 @@ function DashboardTranslation({ id }: { id: string }) {
                       size="sm"
                       className="ml-3"
                       variant="secondary"
-                    // onClick={() => handleFixJson(lang)}
+                      // onClick={() => handleFixJson(lang)}
                     >
                       Fix & Commit
                     </Button>

@@ -1,11 +1,13 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
+import { error } from 'console';
+
 import prisma from '@/lib/prisma';
 
 import { authOptions } from '../auth/[...nextauth]/auth';
 import { getUser } from '../auth/[...nextauth]/auth';
-import { error } from 'console';
+
 /*******CREATE PROJECT ROUTES *******/
 export async function POST(request: Request) {
   try {
@@ -22,7 +24,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-
     try {
       const existingProject = await prisma.project.findFirst({
         where: {
@@ -35,9 +36,7 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-    } catch { }
-
-
+    } catch {}
 
     const user = await prisma.user.findUnique({
       where: {
@@ -50,20 +49,19 @@ export async function POST(request: Request) {
     }
 
     if (!installationId) {
-      return NextResponse.json({ error: "missing Installation Id " });
+      return NextResponse.json({ error: 'missing Installation Id ' });
     }
-    console.info("------------");
+    console.info('------------');
     console.log(installationId);
-    console.log("type of installation id: ", typeof (installationId));
-    console.info("-------------");
+    console.log('type of installation id: ', typeof installationId);
+    console.info('-------------');
 
     const installation = await prisma.installation.findUnique({
-      where: { installationId: installationId }
+      where: { installationId: installationId },
     });
 
-
     console.dir(JSON.stringify(installation, null, 2));
-    console.log("installation Id");
+    console.log('installation Id');
 
     const project = await prisma.project.create({
       data: {

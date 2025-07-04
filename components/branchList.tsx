@@ -34,7 +34,12 @@ export interface BranchData {
   defaultBranch: string;
 }
 
-export default function BranchList({ repoName, userName, onSelect, installationId }: BranchListProps) {
+export default function BranchList({
+  repoName,
+  userName,
+  onSelect,
+  installationId,
+}: BranchListProps) {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const { data: session, status } = useSession();
