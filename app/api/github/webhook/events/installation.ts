@@ -28,6 +28,7 @@ export const installation = async (payload: InstallationPayload) => {
 };
 
 const handleActionCreated = async (payload: InstallationPayload) => {
+
   try {
     await prisma.installation.create({
       data: {

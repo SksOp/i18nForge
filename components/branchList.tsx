@@ -26,6 +26,7 @@ interface BranchListProps {
   repoName: string;
   userName: string;
   onSelect: (branch: string) => void;
+  installationId: string;
 }
 //{"defaultBranch":"test","branches":["main","test"]}
 export interface BranchData {
@@ -33,7 +34,7 @@ export interface BranchData {
   defaultBranch: string;
 }
 
-export default function BranchList({ repoName, userName, onSelect }: BranchListProps) {
+export default function BranchList({ repoName, userName, onSelect, installationId }: BranchListProps) {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const { data: session, status } = useSession();
@@ -46,7 +47,7 @@ export default function BranchList({ repoName, userName, onSelect }: BranchListP
         throw new Error('Access token is not available.');
       }
       const response = await fetch(
-        `/api/project/meta/branch?repo=${repoName}&userName=${userName}`,
+        `/api/project/meta/branch?repo=${repoName}&userName=${userName}&installationId=${installationId}`,
         {
           method: 'GET',
           headers: {

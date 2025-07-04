@@ -193,6 +193,7 @@ const RepoList = ({ installation }: { installation: Installation }) => {
       },
       body: JSON.stringify({
         names,
+        installationId: installation.installationId,
       }),
     });
     return await res.json();
@@ -208,6 +209,7 @@ const RepoList = ({ installation }: { installation: Installation }) => {
         },
         body: JSON.stringify({
           names: [`${installation?.name}/${repo.name}`],
+          installationId: installation.installationId,
         }),
       });
       const result = await res.json();
@@ -254,7 +256,6 @@ const RepoList = ({ installation }: { installation: Installation }) => {
                   variant={alreadyImported ? 'outline' : 'default'}
                   onClick={async () => {
                     if (alreadyImported) return;
-
                     const loadingToast = toast.loading('Checking project status...');
                     const result = await checkForExistingProject(repo, installation);
                     toast.dismiss(loadingToast);

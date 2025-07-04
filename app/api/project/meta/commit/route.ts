@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
     if (!session?.accessToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
     const id = searchParams.get('id');
     const message = searchParams.get('message');
     if (!id || !message) {
@@ -28,9 +27,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
+
+    const accessToken = await GetGitHubAccessTokenViaApp(project.installationId);
 
     const requestBody = await request.json();
     const { branch, content } = requestBody;

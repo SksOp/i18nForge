@@ -1,7 +1,7 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { use, useEffect, useRef, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 
@@ -67,6 +67,7 @@ function FilePathInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
+  const { installationId } = useParams();
 
   const fetchFileTree = async (path: string) => {
     try {
@@ -81,6 +82,7 @@ function FilePathInput({
           userName: owner,
           branch,
           path,
+          installationId,
         }),
       });
       const data = await response.json();
@@ -253,7 +255,8 @@ function FilePathInput({
   );
 }
 
-function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
+function ProjectForm({ owner, repo, installationId }: { owner: string; repo: string; installationId: string }) {
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -292,6 +295,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
         paths: data.langFiles,
         branch: branch ?? defaultBranch ?? '',
         repoName: repo,
+        installationId: installationId,
       });
       toast.success('Project created successfully');
       router.push(`/projects/${project.id}`);
@@ -325,6 +329,7 @@ function ProjectForm({ owner, repo }: { owner: string; repo: string }) {
           <BranchList
             repoName={repo}
             userName={owner}
+            installationId={installationId}
             onSelect={(branch) => {
               setBranch(branch);
             }}
@@ -456,7 +461,7 @@ export default function NewProjectPage({ params: _params }: { params: Params }) 
   return (
     <Layout>
       <div className="container mx-auto py-8 px-4 flex items-center justify-center  w-full">
-        <ProjectForm owner={params.owner} repo={params.repo} />
+        <ProjectForm owner={params.owner} repo={params.repo} installationId={params.installationId} />
       </div>
     </Layout>
   );
