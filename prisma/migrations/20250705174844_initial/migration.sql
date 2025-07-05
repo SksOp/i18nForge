@@ -35,6 +35,7 @@ CREATE TABLE "projects" (
     "name" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "installationId" TEXT NOT NULL,
     "owner" TEXT NOT NULL,
     "ownerType" TEXT NOT NULL,
     "paths" JSONB NOT NULL,
@@ -98,6 +99,9 @@ CREATE UNIQUE INDEX "user_emails_email_key" ON "user_emails"("email");
 
 -- AddForeignKey
 ALTER TABLE "projects" ADD CONSTRAINT "projects_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "projects" ADD CONSTRAINT "projects_installationId_fkey" FOREIGN KEY ("installationId") REFERENCES "installations"("installationId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "shared_project_relations" ADD CONSTRAINT "shared_project_relations_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
