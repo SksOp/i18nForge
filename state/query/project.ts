@@ -10,6 +10,7 @@ interface Project {
   updatedAt: Date;
   ownerType: string;
   defaultBranch: string;
+  installationId: string;
   repoName: string;
   paths: Array<{ path: string; language: string }>;
   userId: string;
@@ -18,6 +19,7 @@ interface CreateProjectPayload {
   name: string;
   owner: string;
   ownerType: string;
+  installationId: string;
   paths: Record<string, string>[];
   branch: string;
   repoName: string;

@@ -22,6 +22,7 @@ export async function GET() {
     }
 
     const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
+    console.log('accessToken from for the branch', accessToken);
     const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', {
       headers: {
         Authorization: `Bearer ${accessToken}`,

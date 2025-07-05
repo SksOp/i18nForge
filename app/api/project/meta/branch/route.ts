@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 import { GetGitHubAccessTokenViaApp } from '@/app/api/global.utils';
+import { error } from 'console';
 
 import prisma from '@/lib/prisma';
 
@@ -17,18 +18,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = await GetGitHubAccessTokenViaApp(session.githubId);
     const repo = request.nextUrl.searchParams.get('repo');
     const userName = request.nextUrl.searchParams.get('userName');
+    let installationId = request.nextUrl.searchParams.get('installationId');
+    const id = request.nextUrl.searchParams.get('projectId');
+    console.log('installationId', installationId);
+    if (!installationId) {
+      if (!id) {
+        return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 }); //
+      }
+      // db call with ID:
+      const project = await prisma.project.findUnique({
+        where: { id: id },
+      });
+
+      if (!project) {
+        return NextResponse.json({ error: 'Project not exist' });
+      }
+
+      installationId = project.installationId;
+    }
+
+    const token = await GetGitHubAccessTokenViaApp(installationId);
     if (!repo || repo === '' || userName === null || token === null) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
-
     const branches = await MetaAPI.getBranchList(token, userName, repo);
     return NextResponse.json(branches);
   } catch (error) {
     console.error('Error fetching branches:', error);
-    return NextResponse.json({ error: 'Failed to fetch branches' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Failed to fetch branches', stack: error.message },
+      { status: 500 },
+    );
   }
 }
 
@@ -40,13 +62,14 @@ export async function POST(request: NextRequest) {
     if (!session?.accessToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const token = await GetGitHubAccessTokenViaApp(session.githubId);
+
     const branch = searchParams.get('branch');
     const id = searchParams.get('id');
-    if (!token || !id || id === '' || branch === null) {
+    if (!id || id === '' || branch === null) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
-    const { owner, repo } = await getOwnerAndRepo(id);
+    const { owner, repo, installationId } = await getOwnerAndRepo(id);
+    const token = await GetGitHubAccessTokenViaApp(installationId);
     if (!owner || !repo) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
@@ -66,10 +89,9 @@ export async function PUT(request: NextRequest) {
     if (!session?.accessToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const token = await GetGitHubAccessTokenViaApp(session.githubId);
     const branch = searchParams.get('branch');
     const id = searchParams.get('id');
-    if (!token || !id || id === '' || branch === null) {
+    if (!id || id === '' || branch === null) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
     const project = await prisma.project.findUnique({
@@ -77,6 +99,7 @@ export async function PUT(request: NextRequest) {
         id: id,
       },
     });
+
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }

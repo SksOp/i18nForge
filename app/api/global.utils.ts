@@ -21,8 +21,8 @@ class GitHubTokenGenerator {
   }
 
   private validateConfig(): void {
-    const { installationId, githubId } = this.config;
-    if (!this.privateKey || !this.appId || !installationId || !githubId) {
+    const { installationId } = this.config;
+    if (!this.privateKey || !this.appId || !installationId) {
       throw new Error('Missing required GitHub App configuration parameters');
     }
     if (!this.privateKey.includes('BEGIN') || !this.privateKey.includes('PRIVATE KEY')) {
@@ -162,23 +162,10 @@ class GitHubTokenGenerator {
   }
 }
 
-export async function GetGitHubAccessTokenViaApp(githubId: string): Promise<string> {
+export async function GetGitHubAccessTokenViaApp(installationId: string): Promise<string> {
   try {
-    const installationDetails = await prisma.installation.findUnique({
-      where: {
-        githubId: githubId,
-      },
-    });
-
-    if (!installationDetails) {
-      throw new Error(
-        'GitHub App installation not found. Please ensure the app is installed in your repository.',
-      );
-    }
-
     const tokenGenerator = new GitHubTokenGenerator({
-      installationId: installationDetails.installationId,
-      githubId: githubId,
+      installationId: installationId,
     });
 
     const data = await tokenGenerator.getAccessToken();

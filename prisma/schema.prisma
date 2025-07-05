@@ -42,6 +42,7 @@ model Installation {
   githubId       String   @unique
   githubName     String
 
+  projects       Project[] @relation("ProjectToInstallation")
   @@map("installations")
 }
 
@@ -50,6 +51,7 @@ model Project {
   name          String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  installationId String
   owner         String
   ownerType     String
   paths         Json
@@ -60,6 +62,7 @@ model Project {
   user                  User                    @relation(fields: [userId], references: [id])
   SharedProjectRelation SharedProjectRelation[]
   ContributorToProject  ContributorToProject[]
+  Installation          Installation?           @relation("ProjectToInstallation", fields: [installationId], references: [installationId])
 
   @@map("projects")
 }

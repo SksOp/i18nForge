@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   if (!session?.accessToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
+  const accessToken = session.accessToken;
   if (!accessToken) {
     return NextResponse.json({ error: 'Missing access token' }, { status: 400 });
   }
