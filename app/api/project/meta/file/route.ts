@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   if (!session?.accessToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const accessToken = await GetGitHubAccessTokenViaApp(session.githubId);
+  const accessToken = session.accessToken;
   if (!accessToken) {
     return NextResponse.json({ error: 'Missing access token' }, { status: 400 });
   }
@@ -41,7 +41,17 @@ export async function GET(request: NextRequest) {
     return url.pathname.substring(1);
   });
   const fileContent = await MetaAPI.getFilesContent(path, accessToken, name);
-  return NextResponse.json({ fileContent }, { status: 200 });
+  try {
+    return NextResponse.json({ fileContent }, { status: 200 });
+  } catch (error) {
+    console.error('Error fetching file content:', error);
+    return NextResponse.json(
+      {
+        error: `Failed to fetch file content: error: ${error.message}`,
+      },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {

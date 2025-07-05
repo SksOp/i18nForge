@@ -76,7 +76,7 @@ function DashboardTranslation({ id }: { id: string }) {
     queryKey: ['branches', project?.owner, project?.repoName],
     queryFn: async () => {
       const response = await fetch(
-        `/api/project/meta/branch?repo=${project?.repoName}&userName=${project?.owner}`,
+        `/api/project/meta/branch?repo=${project?.repoName}&userName=${project?.owner}&projectId=${id}`,
         {
           method: 'GET',
           headers: {

@@ -25,7 +25,6 @@ export interface PullRequestResponse {
 }
 export interface GitHubAppConfig {
   installationId: string;
-  githubId: string;
 }
 export interface AccessTokenResponse {
   token: string;

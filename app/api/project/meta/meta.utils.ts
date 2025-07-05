@@ -1,3 +1,4 @@
+import { th } from 'date-fns/locale';
 import { gql, request } from 'graphql-request';
 
 import prisma from '@/lib/prisma';
@@ -41,8 +42,7 @@ export class MetaUtils {
       }
       return contents;
     } catch (error) {
-      console.error('Error fetching file contents:', error);
-      return null;
+      throw error;
     }
   }
   public static async createBranch(token: string, owner: string, repo: string, branch: string) {
@@ -81,8 +81,7 @@ export class MetaUtils {
       if (!data) return null;
       return data.createRef.ref;
     } catch (error) {
-      console.error('Error creating branch:', error);
-      return null;
+      throw new Error(`Failed to create branch: ${error.message}`);
     }
   }
   public static async commitContent(
@@ -95,7 +94,7 @@ export class MetaUtils {
   ) {
     try {
       const oid = await this.getOID(token, owner, repo, branch);
-      if (!oid) return null;
+      if (!oid) throw new Error('Failed to get OID for the branch');
 
       const additions = fileContent
         .map((file) => {
@@ -127,11 +126,10 @@ export class MetaUtils {
                     }
                 }`;
       const data = await MetaUtils._queryRunner(token, query);
-      if (!data) return null;
+      if (!data) throw new Error('Failed to commit file contents');
       return data;
     } catch (error) {
-      console.error('Error committing file contents:', error);
-      return null;
+      throw new Error(`Failed to commit content: ${error.message}`);
     }
   }
   public static async createPullRequest(
@@ -174,8 +172,7 @@ export class MetaUtils {
       if (!data) return null;
       return data;
     } catch (error) {
-      console.error('Error creating pull request:', error);
-      return null;
+      throw new Error(`Failed to create pull request: ${error.message}`);
     }
   }
   public static async getFileList(
@@ -206,19 +203,22 @@ export class MetaUtils {
       if (!data) return null;
       return data;
     } catch (error) {
-      console.error('Error getting file list:', error);
-      return null;
+      throw new Error(`Failed to get file list: ${error.message}`);
     }
   }
   public static async getRepositoryBranches(token: string, owner: string, repo: string) {
     const data = await this.fetchRepositoryBranches(token, owner, repo);
-    const project = await prisma.project.findFirst({
-      where: {
-        repoName: repo,
-        owner: owner,
-      },
-    });
-    return this.parseRepositoryBranches(data, project?.defaultBranch || '');
+    try {
+      const project = await prisma.project.findFirst({
+        where: {
+          repoName: repo,
+          owner: owner,
+        },
+      });
+      return this.parseRepositoryBranches(data, project?.defaultBranch || '');
+    } catch (error) {
+      return this.parseRepositoryBranches(data, '');
+    }
   }
   public static async getRepositoryTree(
     token: string,
@@ -256,8 +256,7 @@ export class MetaUtils {
       if (!data) return null;
       return data;
     } catch (error) {
-      console.error('Error getting repository tree:', error);
-      return null;
+      throw new Error(`Failed to fetch repository tree: ${error.message}`);
     }
   }
   private static async parseRepositoryTree(data: any) {
@@ -289,8 +288,7 @@ export class MetaUtils {
       if (!data) return null;
       return data;
     } catch (error) {
-      console.error('Error getting repository branches:', error);
-      return null;
+      throw new Error(`Failed to fetch repository branches: ${error.message}`);
     }
   }
   private static async parseRepositoryBranches(data: any, _defaultBranch: string) {
@@ -314,8 +312,7 @@ export class MetaUtils {
       const data = await request(this.GITHUB_API_URL, query, {}, headers);
       return data;
     } catch (error) {
-      console.error('Error executing GraphQL query:', error);
-      return null;
+      throw new Error(`Failed to execute GraphQL query: ${error.message}`);
     }
   }
   private static extractPathFromUrl(url: string): string {
@@ -391,8 +388,7 @@ export class MetaUtils {
       if (!repository) return null;
       return repository.ref.target.oid;
     } catch (error) {
-      console.error('Error fetching OID:', error);
-      return null;
+      throw new Error(`Failed to get OID: ${error.message}`);
     }
   }
 }

@@ -1,11 +1,14 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 
+import { error } from 'console';
+
 import prisma from '@/lib/prisma';
 
 import { authOptions } from '../auth/[...nextauth]/auth';
 import { getUser } from '../auth/[...nextauth]/auth';
 
+/*******CREATE PROJECT ROUTES *******/
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,24 +18,25 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, owner, ownerType, paths, repoName, branch } = body;
+    const { name, owner, ownerType, paths, repoName, branch, installationId } = body;
 
-    if (!name || !owner || !ownerType || !paths || !repoName || !branch) {
+    if (!name || !owner || !ownerType || !paths || !repoName || !branch || !installationId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const existingProject = await prisma.project.findFirst({
-      where: {
-        name,
-      },
-    });
-
-    if (existingProject) {
-      return NextResponse.json(
-        { error: 'A project with this name already exists' },
-        { status: 400 },
-      );
-    }
+    try {
+      const existingProject = await prisma.project.findFirst({
+        where: {
+          name,
+        },
+      });
+      if (existingProject) {
+        return NextResponse.json(
+          { error: 'A project with this name already exists' },
+          { status: 400 },
+        );
+      }
+    } catch {}
 
     const user = await prisma.user.findUnique({
       where: {
@@ -44,12 +48,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    if (!installationId) {
+      return NextResponse.json({ error: 'missing Installation Id ' });
+    }
+    console.info('------------');
+    console.log(installationId);
+    console.log('type of installation id: ', typeof installationId);
+    console.info('-------------');
+
+    const installation = await prisma.installation.findUnique({
+      where: { installationId: installationId },
+    });
+
+    console.dir(JSON.stringify(installation, null, 2));
+    console.log('installation Id');
+
     const project = await prisma.project.create({
       data: {
         name,
         owner,
         ownerType,
         paths,
+        installationId: installationId,
         userId: user?.id,
         repoName,
         defaultBranch: branch,

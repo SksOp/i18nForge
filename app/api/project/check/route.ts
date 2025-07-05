@@ -19,7 +19,6 @@ export async function POST(request: Request) {
         },
       },
     });
-    console.log('Existing projects:', existingProjects);
     return NextResponse.json({
       isExisting: existingProjects.length > 0,
       projects: existingProjects.map((project) => {
