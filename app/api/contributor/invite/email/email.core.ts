@@ -3,12 +3,10 @@ import * as nodemailer from 'nodemailer';
 import { emailConfig } from './email.config';
 
 export class EmailService {
-  private transporter: any;
+  private transporter: nodemailer.Transporter;
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: emailConfig.email.host,
-      port: emailConfig.email.port,
-      secure: emailConfig.email.secure,
+      service: 'gmail',
       auth: {
         user: emailConfig.email.auth.user,
         pass: emailConfig.email.auth.pass,
@@ -19,7 +17,7 @@ export class EmailService {
       },
     });
   }
-  public async sendEmail(to: string, subject: string, html: string): Promise<any> {
+  public async sendEmail(to: string, subject: string, html: string): Promise<void> {
     const mailOptions = {
       from: `i18nForge  ${emailConfig.email.user}`,
       to,
@@ -27,14 +25,17 @@ export class EmailService {
       html,
     };
     return new Promise((resolve, reject) => {
-      this.transporter.sendMail(mailOptions, (error: any, info: any) => {
-        console.log(`Sent email to ${to} with id ${info?.messageId}`);
-        if (error) {
-          reject(error);
-        } else {
-          resolve(info);
-        }
-      });
+      this.transporter.sendMail(
+        mailOptions,
+        (error: Error | null, info: nodemailer.SentMessageInfo) => {
+          console.log(`Sent email to ${to} with id ${info?.messageId}`);
+          if (error) {
+            reject(error);
+          } else {
+            resolve(info);
+          }
+        },
+      );
     });
   }
 }
