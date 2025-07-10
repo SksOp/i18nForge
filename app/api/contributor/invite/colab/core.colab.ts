@@ -1,8 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { addDays } from 'date-fns';
 
-import prisma from '@/lib/prisma';
-
 import { EmailService } from '../email/email.core';
 import { emailTemplate } from '../email/email.template';
 
