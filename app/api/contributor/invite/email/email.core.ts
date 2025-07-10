@@ -19,7 +19,7 @@ export class EmailService {
   }
   public async sendEmail(to: string, subject: string, html: string): Promise<void> {
     const mailOptions = {
-      from: `i18nForge  ${emailConfig.email.user}`,
+      from: `Jenny from i18nForge  <i18nforge@devflex.co.in>`,
       to,
       subject,
       html,
