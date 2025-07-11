@@ -155,4 +155,23 @@ export class ColabService {
       contributors,
     };
   }
+
+  public async removeCollaborator(collaboratorId: string) {
+    const contributor = await rawPrisma.contributorToProject.findUnique({
+      where: { id: collaboratorId },
+    });
+
+    if (!contributor) {
+      throw new Error('Contributor not found');
+    }
+
+    await rawPrisma.contributorToProject.delete({
+      where: { id: collaboratorId },
+    });
+
+    return {
+      success: true,
+      message: 'Collaborator removed successfully',
+    };
+  }
 }

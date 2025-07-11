@@ -77,6 +77,22 @@ function DashboardSettings({ id }: { id: string }) {
     }
   };
 
+  const deleteCollaborator= async (contributorId:string)=>{
+    try {
+      const res = await fetch(`/api/contributor?projectId=${id}`, {
+        method: 'DELETE',
+        body: JSON.stringify({contributorId: contributorId }),
+      });
+      if (!res.ok) throw new Error('Failed to delete collaborator');
+      toast.success('Collaborator removed successfully');
+      return true;
+    } catch (error) {
+      console.error('Error deleting collaborator:', error);
+      toast.error('Failed to remove collaborator');
+      return false;
+    }
+  }
+
   if (isLoading)
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -146,9 +162,9 @@ function DashboardSettings({ id }: { id: string }) {
                   {inviteLinks.map((link, idx) => (
                     <div
                       key={idx}
-                      className="bg-gray-100 p-2 rounded flex items-center justify-between"
+                      className=" dark:bg-gray-800 p-2 rounded flex items-center justify-between"
                     >
-                      <span className="text-sm break-all">{link}</span>
+                      <span className="text-sm break-all text-gray-900 dark:text-gray-100">{link}</span>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -177,18 +193,68 @@ function DashboardSettings({ id }: { id: string }) {
       <CardContent className="flex flex-col gap-4 p-0">
         {contributors?.contributors?.map((member) => (
           <div key={member.name} className="flex items-center gap-4 p-4 border-b last:border-b-0">
-            <Avatar>
-              <AvatarImage src={'/placeholder'} alt="User" />
-              <AvatarFallback className="text-xs">{member.email[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                <h3 className="text-sm font-normal">{member.id}</h3>
-                <Badge variant="outline">{member.status}</Badge>
-              </div>
-
-              <p className="text-xs font-normal">{member.email}</p>
-            </div>
+        <Avatar>
+          <AvatarImage src={'/placeholder'} alt="User" />
+          <AvatarFallback className="text-xs">{member.email[0]}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <h3 className="text-sm font-normal">{member.id}</h3>
+            <Badge variant="outline">{member.status}</Badge>
+          </div>
+          <p className="text-xs font-normal">{member.email}</p>
+        </div>
+        <div className="ml-auto flex gap-2">
+          {member.status != "active" && (    
+            <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            navigator.clipboard.writeText(member.colabLink);
+            toast.success('Invite link copied to clipboard');
+          }}
+            >
+          <Copy className="h-4 w-4" />
+          Copy Invite Link
+            </Button>
+          )}
+          <Button
+            variant="destructive"
+            size="sm"
+            className="flex items-center gap-1"
+            onClick={async () => {
+          if (
+            window.confirm(
+              `Are you sure you want to remove ${member.email} from the project?`
+            )
+          ) {
+            const result = await deleteCollaborator(member.id);
+            if (result) {
+              toast.success('Collaborator removed');
+            } else {
+              toast.error('Failed to remove collaborator');
+            }
+          }
+            }}
+            title="Remove collaborator"
+          >
+            <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+            >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+            </svg>
+            Delete
+          </Button>
+        </div>
           </div>
         ))}
       </CardContent>

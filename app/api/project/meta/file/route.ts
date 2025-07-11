@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
-import { GetGitHubAccessTokenViaApp } from '@/app/api/global.utils';
+import { GetGitHubAccessTokenViaApp, haveAccessToProject } from '@/app/api/global.utils';
 
 import prisma from '@/lib/prisma';
 
@@ -25,6 +25,10 @@ export async function GET(request: NextRequest) {
       id: request.nextUrl.searchParams.get('id') ?? undefined,
     },
   });
+  const isAccessable = await haveAccessToProject(project?.id ?? '', session.user.email);
+  if (!isAccessable) {
+    return NextResponse.json({ error: 'You do not have access to this project' }, { status: 403 });
+  }
 
   if (!project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });

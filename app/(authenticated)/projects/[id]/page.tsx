@@ -24,17 +24,39 @@ function DashboardPage() {
     dashboardQuery(params.id as string),
   );
 
+  const {data:isAccessible, isLoading: isAccessibleLoading} = useQuery({
+    queryKey: ['isAccessible', params.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/project/isAccessable/${params.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch project accessibility status');
+      }
+      const data = await response.json();
+      return data.isAccessible;
+    },
+    enabled: !!params.id,
+  });
+
+
+
   const { data: Ownership, isLoading: isOwnerLoading } = useQuery(
     isOwnerQuery(params.id as string),
   );
 
-  if (isLoading || dashboardLoading || isOwnerLoading) {
+  if (isLoading || dashboardLoading || isOwnerLoading || isAccessibleLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner />
       </div>
     );
   }
+
+  
 
   const InfoTile = ({ title, value, subtitle, icon }) => (
     <div className=" rounded-lg border p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -49,7 +71,8 @@ function DashboardPage() {
     </div>
   );
 
-  return (
+  return isAccessible ? (
+
     <Layout>
       <div className="mt-2 px-10">
         <div className="flex items-center justify-start gap-1 mb-4">
@@ -80,6 +103,18 @@ function DashboardPage() {
             </TabsContent>
           )}
         </Tabs>
+      </div>
+    </Layout>
+  ):(
+    <Layout>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-6">You do not have permission to view this project.</p>
+          <Link href="/home" className="text-blue-500 hover:underline">
+            Go back to Home
+          </Link>
+        </div>
       </div>
     </Layout>
   );
