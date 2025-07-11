@@ -4,8 +4,9 @@ import { JWT } from 'next-auth/jwt';
 import GithubProvider from 'next-auth/providers/github';
 
 import prisma from '@/lib/prisma';
-import { emailWelcomeTemplate } from '../../contributor/invite/email/email.template';
+
 import { EmailService } from '../../contributor/invite/email/email.core';
+import { emailWelcomeTemplate } from '../../contributor/invite/email/email.template';
 
 if (!process.env.GITHUB_OAUTH_ID || !process.env.GITHUB_OAUTH_SECRET) {
   throw new Error('GITHUB_OAUTH_ID and GITHUB_OAUTH_SECRET must be set');

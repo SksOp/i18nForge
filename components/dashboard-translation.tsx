@@ -47,8 +47,10 @@ interface ChangedFile {
 }
 
 function DashboardTranslation({ id }: { id: string }) {
-  if(!id) {
-    return <div className="flex items-center justify-center min-h-screen">Project ID is missing</div>;
+  if (!id) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">Project ID is missing</div>
+    );
   }
   const { data: project, isLoading, error } = useQuery(projectQuery(id as string));
   const { data: session } = useSession();

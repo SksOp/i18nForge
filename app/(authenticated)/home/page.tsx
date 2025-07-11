@@ -26,12 +26,20 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!projectResponse.projects || projectResponse.projects.length === 0 || projectResponse.projects.length === undefined) {
+    if (
+      !projectResponse.projects ||
+      projectResponse.projects.length === 0 ||
+      projectResponse.projects.length === undefined
+    ) {
       router.push('/new');
     }
   }, [projectResponse]);
 
-  if (!projectResponse.projects || projectResponse.projects.length === 0 || projectResponse.projects.length === undefined) {
+  if (
+    !projectResponse.projects ||
+    projectResponse.projects.length === 0 ||
+    projectResponse.projects.length === undefined
+  ) {
     return null;
   }
 
@@ -97,14 +105,14 @@ export default function HomePage() {
                     )}
                     <span
                       className={
-                      currentUser.userName === project.owner
-                        ? 'text-primary font-semibold'
-                        : 'text-muted-foreground'
+                        currentUser.userName === project.owner
+                          ? 'text-primary font-semibold'
+                          : 'text-muted-foreground'
                       }
                     >
                       {currentUser.userName === project.owner
-                      ? 'Managed By You'
-                      : `Managed By ${project.owner}`}
+                        ? 'Managed By You'
+                        : `Managed By ${project.owner}`}
                     </span>
                   </Link>
                 </CardHeader>

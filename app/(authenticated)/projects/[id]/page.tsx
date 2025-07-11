@@ -1,5 +1,6 @@
 'use client';
 
+import { SessionProvider } from 'next-auth/react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import React from 'react';
@@ -15,7 +16,6 @@ import DashboardTranslation from '@/components/dashboard-translation';
 import DeleteProject from '@/components/deleteProject';
 import Spinner from '@/components/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SessionProvider } from 'next-auth/react';
 
 function DashboardPage() {
   const params = useParams();
@@ -24,7 +24,9 @@ function DashboardPage() {
     dashboardQuery(params.id as string),
   );
 
-  const { data: Ownership, isLoading: isOwnerLoading } = useQuery(isOwnerQuery(params.id as string));
+  const { data: Ownership, isLoading: isOwnerLoading } = useQuery(
+    isOwnerQuery(params.id as string),
+  );
 
   if (isLoading || dashboardLoading || isOwnerLoading) {
     return (
@@ -61,9 +63,7 @@ function DashboardPage() {
           <TabsList className=" flex gap-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="translations">Translations</TabsTrigger>
-            {Ownership.isOwner && (
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            )}
+            {Ownership.isOwner && <TabsTrigger value="settings">Settings</TabsTrigger>}
           </TabsList>
           <TabsContent value="overview">
             <DashboardMain data={dashboard} />
@@ -84,6 +84,5 @@ function DashboardPage() {
     </Layout>
   );
 }
-
 
 export default DashboardPage;

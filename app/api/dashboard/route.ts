@@ -6,10 +6,10 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
 import prisma from '@/lib/prisma';
 
+import { GetGitHubAccessTokenViaApp } from '../global.utils';
 import { totalColab } from './totalColab/route';
 import { TotalLanguage } from './totalLanguage/route';
 import { GetComitsHistory } from './utils.dashboard';
-import { GetGitHubAccessTokenViaApp } from '../global.utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,25 +39,25 @@ export async function GET(request: NextRequest) {
     const [commits, collaborators, llmUsage] = await Promise.allSettled([
       repo
         ? (async () => {
-          const commits = await GetComitsHistory(
-            await GetGitHubAccessTokenViaApp(project.installationId),
-            project?.name,
-            BotName + '[bot]',
-            per_page,
-            page,
-          );
-          return commits;
-        })().catch((error) => {
-          console.error('Error fetching commits:', error);
-          return { error: error.message };
-        })
+            const commits = await GetComitsHistory(
+              await GetGitHubAccessTokenViaApp(project.installationId),
+              project?.name,
+              BotName + '[bot]',
+              per_page,
+              page,
+            );
+            return commits;
+          })().catch((error) => {
+            console.error('Error fetching commits:', error);
+            return { error: error.message };
+          })
         : Promise.resolve(null),
 
       projectId
         ? totalColab(projectId).catch((error) => {
-          console.error('Error fetching collaborators:', error);
-          return { error: error.message };
-        })
+            console.error('Error fetching collaborators:', error);
+            return { error: error.message };
+          })
         : Promise.resolve(null),
 
       (async () => {
@@ -76,9 +76,9 @@ export async function GET(request: NextRequest) {
 
     const languages = projectId
       ? await TotalLanguage(projectId).catch((error) => {
-        console.error('Error fetching languages:', error);
-        return { error: error.message };
-      })
+          console.error('Error fetching languages:', error);
+          return { error: error.message };
+        })
       : null;
 
     const responseData = {

@@ -93,7 +93,7 @@ function DashboardSettings({ id }: { id: string }) {
           <CardTitle>Team Members</CardTitle>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" >
+              <Button variant="outline" size="sm">
                 <Plus className="w-4 h-4" /> Add Collaborator
               </Button>
             </DialogTrigger>

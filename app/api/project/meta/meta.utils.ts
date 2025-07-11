@@ -93,7 +93,7 @@ export class MetaUtils {
     message: string,
     user: { user: string; email: string },
   ) {
-    console.log("User commiting content:", user);
+    console.log('User commiting content:', user);
     try {
       const oid = await this.getOID(token, owner, repo, branch);
       if (!oid) throw new Error('Failed to get OID for the branch');

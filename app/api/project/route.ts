@@ -36,7 +36,7 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-    } catch { }
+    } catch {}
 
     const user = await prisma.user.findUnique({
       where: {
@@ -89,15 +89,12 @@ export async function GET() {
     const user = await getUser(session.githubId);
     const contributors = await prisma.contributorToProject.findMany({
       where: {
-        email: user?.email
-      }
-    })
+        email: user?.email,
+      },
+    });
     const projects = await prisma.project.findMany({
       where: {
-        OR: [
-          { userId: user?.id },
-          { id: { in: contributors.map(c => c.projectId) } },
-        ]
+        OR: [{ userId: user?.id }, { id: { in: contributors.map((c) => c.projectId) } }],
       },
     });
     /*** also get project that i dont know from contributors from githubs***/
@@ -106,7 +103,7 @@ export async function GET() {
       projects,
       currentUser: {
         username: user?.username,
-      }
+      },
     });
   } catch (error) {
     console.error('Error fetching projects:', error);

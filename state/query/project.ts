@@ -2,7 +2,6 @@ import { JsonValue } from '@prisma/client/runtime/library';
 import { queryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-
 interface ProjectResponse {
   projects: Project[];
   currentUser: {
@@ -131,7 +130,7 @@ export const isOwnerQuery = (projectId: string) => {
         const error = await response.json();
         throw new Error(error.error || 'Failed to check ownership');
       }
-      return response.json() as Promise<{ isOwner: boolean, error?: string }>;
+      return response.json() as Promise<{ isOwner: boolean; error?: string }>;
     },
     retry: false,
     refetchOnWindowFocus: false,

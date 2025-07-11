@@ -37,10 +37,10 @@ export class GoogleAIService implements LLMService {
         model: this.model.modelName,
         usage: response.llmOutput?.tokenUsage
           ? {
-            promptTokens: response.llmOutput.tokenUsage.promptTokens,
-            completionTokens: response.llmOutput.tokenUsage.completionTokens,
-            totalTokens: response.llmOutput.tokenUsage.totalTokens,
-          }
+              promptTokens: response.llmOutput.tokenUsage.promptTokens,
+              completionTokens: response.llmOutput.tokenUsage.completionTokens,
+              totalTokens: response.llmOutput.tokenUsage.totalTokens,
+            }
           : undefined,
       };
     });
@@ -54,7 +54,6 @@ export class GoogleAIService implements LLMService {
 
     return this.retryHandler.executeWithRetry(async () => {
       const response = await chain.invoke(variables);
-
 
       return {
         content: response.content as string,

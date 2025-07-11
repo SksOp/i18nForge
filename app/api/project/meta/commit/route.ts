@@ -24,7 +24,10 @@ export async function POST(request: NextRequest) {
 
     const isAccessable = await haveAccessToProject(id, session.user.email);
     if (!isAccessable) {
-      return NextResponse.json({ error: 'You do not have access to this project' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'You do not have access to this project' },
+        { status: 403 },
+      );
     }
 
     const project = await prisma.project.findUnique({

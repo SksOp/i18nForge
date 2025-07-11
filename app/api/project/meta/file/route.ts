@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
   }
 
-
   const branch = request.nextUrl.searchParams.get('branch') ?? 'main';
 
   const project = await prisma.project.findUnique({
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
     const user = {
       user: session.name,
       email: session.email,
-    }
+    };
 
     if (!token || !owner || !repo || !branch || !path || !message) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -91,7 +90,15 @@ export async function POST(request: NextRequest) {
       branch: branch,
     }));
 
-    const result = await MetaAPI.commitContent(token, owner, repo, branch, fileContent, message, user);
+    const result = await MetaAPI.commitContent(
+      token,
+      owner,
+      repo,
+      branch,
+      fileContent,
+      message,
+      user,
+    );
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error committing content:', error);

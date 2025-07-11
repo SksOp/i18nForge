@@ -178,7 +178,6 @@ export async function GetGitHubAccessTokenViaApp(installationId: string): Promis
   }
 }
 
-
 export async function GetGithubAccessTokenViaProjectId(params: { installationId: string }) {
   try {
     const project = await prisma.project.findUnique({
@@ -194,7 +193,6 @@ export async function GetGithubAccessTokenViaProjectId(params: { installationId:
     );
   }
 }
-
 
 export async function haveOwnerAccessToProject(
   projectId: string,
@@ -225,11 +223,7 @@ export async function haveOwnerAccessToProject(
   }
 }
 
-
-export async function haveAccessToProject(
-  projectId: string,
-  userEmail: string,
-): Promise<boolean> {
+export async function haveAccessToProject(projectId: string, userEmail: string): Promise<boolean> {
   if (!projectId || !userEmail) {
     throw new Error('Project ID and user email are required');
   }
@@ -238,20 +232,22 @@ export async function haveAccessToProject(
       prisma.project.findUnique({
         where: { id: projectId },
       }),
-      prisma.user.findFirst({ // 
+      prisma.user.findFirst({
+        //
         where: { email: userEmail },
       }),
       prisma.contributorToProject.findFirst({
         where: {
           projectId: projectId,
           email: userEmail,
-        }
-      })
+        },
+      }),
     ]);
 
     if (projectResult.status === 'fulfilled' && projectResult.value) {
       const userObj = userResult.status === 'fulfilled' ? userResult.value : null;
-      const contributorObj = contributorResult.status === 'fulfilled' ? contributorResult.value : null;
+      const contributorObj =
+        contributorResult.status === 'fulfilled' ? contributorResult.value : null;
       return userObj ? projectResult.value.userId === userObj.id || contributorObj !== null : false;
     }
     return false;
