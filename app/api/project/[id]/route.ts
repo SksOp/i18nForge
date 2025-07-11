@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 
 import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/auth';
 
 type Params = Promise<{ id: string }>;
 export async function GET(request: Request, data: { params: Params }) {
+
+  const session = await getServerSession(authOptions);
+  if (!session?.accessToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const params = await data.params;
     const { id } = params;
@@ -17,7 +25,12 @@ export async function GET(request: Request, data: { params: Params }) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    return NextResponse.json(project);
+    return NextResponse.json({
+      project,
+      currentUser: {
+        userName: session.username,
+      },
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch project' }, { status: 500 });
   }

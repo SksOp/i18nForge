@@ -36,7 +36,7 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-    } catch {}
+    } catch { }
 
     const user = await prisma.user.findUnique({
       where: {
@@ -51,10 +51,6 @@ export async function POST(request: Request) {
     if (!installationId) {
       return NextResponse.json({ error: 'missing Installation Id ' });
     }
-    console.info('------------');
-    console.log(installationId);
-    console.log('type of installation id: ', typeof installationId);
-    console.info('-------------');
 
     const installation = await prisma.installation.findUnique({
       where: { installationId: installationId },
@@ -91,13 +87,27 @@ export async function GET() {
     }
 
     const user = await getUser(session.githubId);
+    const contributors = await prisma.contributorToProject.findMany({
+      where: {
+        email: user?.email
+      }
+    })
     const projects = await prisma.project.findMany({
       where: {
-        userId: user?.id,
+        OR: [
+          { userId: user?.id },
+          { id: { in: contributors.map(c => c.projectId) } },
+        ]
       },
     });
+    /*** also get project that i dont know from contributors from githubs***/
 
-    return NextResponse.json(projects);
+    return NextResponse.json({
+      projects,
+      currentUser: {
+        username: user?.username,
+      }
+    });
   } catch (error) {
     console.error('Error fetching projects:', error);
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });

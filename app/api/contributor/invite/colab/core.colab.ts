@@ -78,15 +78,13 @@ export class ColabService {
 
     for (const contributor of results) {
       try {
-        console.log('Sending email to', contributor.email);
-        await this.emailService.sendEmail(
-          contributor.email,
-          `You've been invited to collaborate on ${project.name}`,
-          emailTemplate(project.name, contributor.colabLink, senderName),
-        );
+        await this.emailService.sendEmail({
+          to: contributor.email,
+          subject: `You've been invited to collaborate on ${project.name}`,
+          html: emailTemplate(project.name, contributor.colabLink, senderName),
+        });
         successEmails[contributor.email] = 'Invite sent';
       } catch (error) {
-        console.error(`Error sending email to ${contributor.email}:`, error);
         failedEmails[contributor.email] = 'Error sending email';
       }
     }

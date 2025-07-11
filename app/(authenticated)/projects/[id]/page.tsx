@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import React from 'react';
 
 import Layout from '@/layout/layout';
-import { dashboardQuery, projectQuery } from '@/state/query/project';
+import { dashboardQuery, isOwnerQuery, projectQuery } from '@/state/query/project';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Home } from 'lucide-react';
 
@@ -15,6 +15,7 @@ import DashboardTranslation from '@/components/dashboard-translation';
 import DeleteProject from '@/components/deleteProject';
 import Spinner from '@/components/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SessionProvider } from 'next-auth/react';
 
 function DashboardPage() {
   const params = useParams();
@@ -23,9 +24,9 @@ function DashboardPage() {
     dashboardQuery(params.id as string),
   );
 
-  console.log('dashboard', dashboard);
+  const { data: Ownership, isLoading: isOwnerLoading } = useQuery(isOwnerQuery(params.id as string));
 
-  if (isLoading || dashboardLoading) {
+  if (isLoading || dashboardLoading || isOwnerLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner />
@@ -54,30 +55,35 @@ function DashboardPage() {
             <Home className="w-4 h-4" />
           </Link>
           <ChevronRight className="w-4 h-4" />
-          <h4 className="text-sm font-bold ">{project.name}</h4>
+          <h4 className="text-sm font-bold ">{project.project.name}</h4>
         </div>
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className=" flex gap-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="translations">Translations</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            {Ownership.isOwner && (
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="overview">
             <DashboardMain data={dashboard} />
           </TabsContent>
           <TabsContent value="translations">
-            <DashboardTranslation id={project.id} />{' '}
+            <DashboardTranslation id={project.project.id} />{' '}
           </TabsContent>
-          <TabsContent value="settings">
-            <div className="mt-3">
-              <DashboardSettings id={project.id} />
-              <DeleteProject id={project.id} />
-            </div>
-          </TabsContent>
+          {Ownership.isOwner && (
+            <TabsContent value="settings">
+              <div className="mt-3">
+                <DashboardSettings id={project.project.id} />
+                <DeleteProject id={project.project.id} />
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </Layout>
   );
 }
+
 
 export default DashboardPage;

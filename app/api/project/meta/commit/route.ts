@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
-import { GetGitHubAccessTokenViaApp } from '@/app/api/global.utils';
+import { GetGitHubAccessTokenViaApp, haveAccessToProject } from '@/app/api/global.utils';
 
 import prisma from '@/lib/prisma';
 
@@ -21,6 +21,12 @@ export async function POST(request: NextRequest) {
     if (!id || !message) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
+
+    const isAccessable = await haveAccessToProject(id, session.user.email);
+    if (!isAccessable) {
+      return NextResponse.json({ error: 'You do not have access to this project' }, { status: 403 });
+    }
+
     const project = await prisma.project.findUnique({
       where: {
         id: id ?? '',
@@ -65,6 +71,10 @@ export async function POST(request: NextRequest) {
       branch,
       fileContent,
       message,
+      {
+        user: session.name,
+        email: session.email,
+      },
     );
     return NextResponse.json({
       status: 200,

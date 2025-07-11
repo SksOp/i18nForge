@@ -47,6 +47,9 @@ interface ChangedFile {
 }
 
 function DashboardTranslation({ id }: { id: string }) {
+  if(!id) {
+    return <div className="flex items-center justify-center min-h-screen">Project ID is missing</div>;
+  }
   const { data: project, isLoading, error } = useQuery(projectQuery(id as string));
   const { data: session } = useSession();
   const [selectedBranch, setSelectedBranch] = useState<string | undefined>(undefined);
@@ -73,10 +76,10 @@ function DashboardTranslation({ id }: { id: string }) {
     isLoading: isBranchLoading,
     error: branchError,
   } = useQuery({
-    queryKey: ['branches', project?.owner, project?.repoName],
+    queryKey: ['branches', project.project?.owner, project.project?.repoName],
     queryFn: async () => {
       const response = await fetch(
-        `/api/project/meta/branch?repo=${project?.repoName}&userName=${project?.owner}&projectId=${id}`,
+        `/api/project/meta/branch?repo=${project.project?.repoName}&userName=${project.project?.owner}&projectId=${id}`,
         {
           method: 'GET',
           headers: {
@@ -88,7 +91,7 @@ function DashboardTranslation({ id }: { id: string }) {
       if (!response.ok) throw new Error('Failed to fetch branches');
       return response.json() as Promise<BranchData>;
     },
-    enabled: !!project?.owner && !!project?.repoName,
+    enabled: !!project.project?.owner && !!project.project?.repoName,
   });
 
   const changedFiles = useMemo(() => {
@@ -289,7 +292,7 @@ function DashboardTranslation({ id }: { id: string }) {
     const invalidRaw: Record<string, string> = {};
 
     if (fileContent?.fileContent) {
-      project?.paths.forEach((path, index) => {
+      project.project?.paths.forEach((path, index) => {
         try {
           const content = fileContent.fileContent[index].content;
           if (typeof content === 'object') {
@@ -305,7 +308,7 @@ function DashboardTranslation({ id }: { id: string }) {
         }
       });
 
-      setFileNames(project?.paths.map((p) => p.language) || []);
+      setFileNames(project.project?.paths.map((p) => p.language) || []);
       setDataForTable(createTableData(table));
       setInvalidLangs(invalidFiles);
       setInvalidRawContent(invalidRaw);
@@ -315,7 +318,7 @@ function DashboardTranslation({ id }: { id: string }) {
   useEffect(() => {
     if (fileContent?.fileContent) {
       const orig: Record<string, any> = {};
-      project?.paths.forEach((path, idx) => {
+      project.project?.paths.forEach((path, idx) => {
         try {
           const cnt = fileContent.fileContent[idx].content;
           orig[path.language] = typeof cnt === 'string' ? JSON.parse(cnt) : cnt;
@@ -328,8 +331,8 @@ function DashboardTranslation({ id }: { id: string }) {
   }, [fileContent, project]);
 
   useEffect(() => {
-    if (project?.branch) {
-      setSelectedBranch(project.branch);
+    if (project.project?.branch) {
+      setSelectedBranch(project.project.branch);
     } else {
       setSelectedBranch('main');
     }
@@ -395,7 +398,7 @@ function DashboardTranslation({ id }: { id: string }) {
       toast.success('Branch created successfully');
 
       queryClient.invalidateQueries({
-        queryKey: ['branches', project?.owner, project?.repoName],
+        queryKey: ['branches', project.project?.owner, project.project?.repoName],
       });
 
       await handleBranchChange(branchName);

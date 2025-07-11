@@ -4,6 +4,8 @@ import { JWT } from 'next-auth/jwt';
 import GithubProvider from 'next-auth/providers/github';
 
 import prisma from '@/lib/prisma';
+import { emailWelcomeTemplate } from '../../contributor/invite/email/email.template';
+import { EmailService } from '../../contributor/invite/email/email.core';
 
 if (!process.env.GITHUB_OAUTH_ID || !process.env.GITHUB_OAUTH_SECRET) {
   throw new Error('GITHUB_OAUTH_ID and GITHUB_OAUTH_SECRET must be set');
@@ -63,6 +65,13 @@ export const authOptions = {
               email: user.email ?? null,
               tokenExpiresAt: account?.expires_at ? new Date(account.expires_at * 1000) : null,
             },
+          });
+
+          // send mail to the user
+          await new EmailService().sendEmail({
+            to: user.email,
+            subject: 'Welcome to i18nForge',
+            html: emailWelcomeTemplate(user.name),
           });
         }
 

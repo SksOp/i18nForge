@@ -22,16 +22,16 @@ import {
 } from '@/components/ui/card';
 
 export default function HomePage() {
-  const { data: projects } = useSuspenseQuery(projectsQuery());
+  const { data: projectResponse } = useSuspenseQuery(projectsQuery());
   const router = useRouter();
 
   useEffect(() => {
-    if (!projects || projects.length === 0 || projects.length === undefined) {
+    if (!projectResponse.projects || projectResponse.projects.length === 0 || projectResponse.projects.length === undefined) {
       router.push('/new');
     }
-  }, [projects]);
+  }, [projectResponse]);
 
-  if (!projects || projects.length === 0 || projects.length === undefined) {
+  if (!projectResponse.projects || projectResponse.projects.length === 0 || projectResponse.projects.length === undefined) {
     return null;
   }
 
@@ -50,7 +50,7 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {projects.length === 0 ? (
+      {projectResponse.projects.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <p className="text-muted-foreground mb-4">No projects found</p>
@@ -61,11 +61,12 @@ export default function HomePage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => {
+          {projectResponse.projects.map((project) => {
             const githubRepoUrl = `https://github.com/${project.name}`;
             const githubProfileUrl = `https://github.com/${project.owner}`;
             const createdAtFormatted = format(new Date(project.createdAt), 'PPP');
             const languageCount = project.paths?.length || 0;
+            const currentUser = projectResponse.currentUser;
 
             return (
               <Card
@@ -94,7 +95,17 @@ export default function HomePage() {
                     ) : (
                       <Building2 className="h-4 w-4" />
                     )}
-                    <span>{project.owner}</span>
+                    <span
+                      className={
+                      currentUser.userName === project.owner
+                        ? 'text-primary font-semibold'
+                        : 'text-muted-foreground'
+                      }
+                    >
+                      {currentUser.userName === project.owner
+                      ? 'Managed By You'
+                      : `Managed By ${project.owner}`}
+                    </span>
                   </Link>
                 </CardHeader>
                 <CardContent>
