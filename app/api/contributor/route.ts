@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
-import { ColabService } from './invite/colab/core.colab';
 import { haveOwnerAccessToProject } from '../global.utils';
+import { ColabService } from './invite/colab/core.colab';
 
 export async function GET(request: Request) {
   try {
@@ -49,7 +49,10 @@ export async function DELETE(request: Request) {
     /** yadi woh project ka admin hai tho he contributor ko remove kar sakta hain  */
     const isAdmin = await haveOwnerAccessToProject(projectId, session.user.email);
     if (!isAdmin) {
-      return NextResponse.json({ error: 'You do not have permission to remove contributors' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'You do not have permission to remove contributors' },
+        { status: 403 },
+      );
     }
 
     if (!contributorId) {

@@ -67,7 +67,10 @@ export async function POST(request: NextRequest) {
     const id = searchParams.get('id');
     const isAccessable = await haveAccessToProject(id ?? '', session.user.email);
     if (!isAccessable) {
-      return NextResponse.json({ error: 'You do not have access to this project' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'You do not have access to this project' },
+        { status: 403 },
+      );
     }
     if (!id || id === '' || branch === null) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });

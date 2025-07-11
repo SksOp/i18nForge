@@ -24,7 +24,7 @@ function DashboardPage() {
     dashboardQuery(params.id as string),
   );
 
-  const {data:isAccessible, isLoading: isAccessibleLoading} = useQuery({
+  const { data: isAccessible, isLoading: isAccessibleLoading } = useQuery({
     queryKey: ['isAccessible', params.id],
     queryFn: async () => {
       const response = await fetch(`/api/project/isAccessable/${params.id}`, {
@@ -42,8 +42,6 @@ function DashboardPage() {
     enabled: !!params.id,
   });
 
-
-
   const { data: Ownership, isLoading: isOwnerLoading } = useQuery(
     isOwnerQuery(params.id as string),
   );
@@ -55,8 +53,6 @@ function DashboardPage() {
       </div>
     );
   }
-
-  
 
   const InfoTile = ({ title, value, subtitle, icon }) => (
     <div className=" rounded-lg border p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -72,7 +68,6 @@ function DashboardPage() {
   );
 
   return isAccessible ? (
-
     <Layout>
       <div className="mt-2 px-10">
         <div className="flex items-center justify-start gap-1 mb-4">
@@ -105,7 +100,7 @@ function DashboardPage() {
         </Tabs>
       </div>
     </Layout>
-  ):(
+  ) : (
     <Layout>
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
