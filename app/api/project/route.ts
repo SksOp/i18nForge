@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     });
 
     console.dir(JSON.stringify(installation, null, 2));
-    console.log('installation Id');
+    console.log('installation Id', installationId);
 
     const project = await prisma.project.create({
       data: {
@@ -65,8 +65,8 @@ export async function POST(request: Request) {
         owner,
         ownerType,
         paths,
-        installationId: installationId,
-        userId: user?.id,
+        installationId: installation.installationId,
+        userId: user.id,
         repoName,
         defaultBranch: branch,
       },

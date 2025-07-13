@@ -3,8 +3,13 @@
 import { useSession } from 'next-auth/react';
 import React, { useState } from 'react';
 
-import { getContributorsQuery } from '@/repository/tanstack/queries/collab.query';
-import { useQuery } from '@tanstack/react-query';
+import {
+  addCollaboratorQuery,
+  deleteContributorQuery,
+  getContributorsQuery,
+} from '@/repository/tanstack/queries/collab.query';
+import { queryClient } from '@/repository/tanstack/query-client';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Copy, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,7 +20,9 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -25,12 +32,45 @@ import {
 function DashboardSettings({ id }: { id: string }) {
   const [emails, setEmails] = useState<string[]>([]);
   const [currentEmailInput, setCurrentEmailInput] = useState('');
-  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  // const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [inviteLinks, setInviteLinks] = useState<string[]>([]);
   const { data: session } = useSession();
   const { data: contributors, isLoading, isError } = useQuery(getContributorsQuery(id));
+  const { mutate: addCollaborator, isPending: isSendingInvite } = useMutation({
+    ...addCollaboratorQuery(),
+    onSuccess: (data) => {
+      const links = data.contributors?.map((c) => c.colabLink).filter(Boolean);
+      if (links?.length) {
+        setInviteLinks(links);
+      }
+      setEmails([]);
+      setCurrentEmailInput('');
+      toast.success('Invite link sent!');
+      queryClient.invalidateQueries({ queryKey: ['contributors', id] });
+    },
+    onError: () => {
+      toast.error('Failed to send invites');
+    },
+  });
+
+  const { mutate: deleteCollaborator, isPending } = useMutation({
+    mutationFn: ({ contributorId, projectId }: { contributorId: string; projectId: string }) =>
+      deleteContributorQuery(contributorId, projectId).queryFn(),
+    onSuccess: () => {
+      toast.success('Collaborator removed successfully');
+      queryClient.invalidateQueries({ queryKey: ['contributors', id] });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting collaborator:', error);
+      toast.error('Failed to remove collaborator');
+    },
+  });
 
   const handleAddCollaborator = async () => {
+    if (!id) {
+      toast.error('Project ID is required to add collaborators.');
+      return;
+    }
     let allEmails = [...emails];
     const trimmed = currentEmailInput.trim();
 
@@ -52,46 +92,24 @@ function DashboardSettings({ id }: { id: string }) {
       toast.error('You cannot invite yourself.');
       return;
     }
-
-    setIsSendingInvite(true);
-    try {
-      const res = await fetch(`/api/contributor/invite`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId: id, emails: allEmails }),
-      });
-
-      if (!res.ok) throw new Error('Failed to send invite');
-      const data = await res.json();
-      const links = data.contributors?.map((c) => c.colabLink).filter(Boolean);
-      if (links?.length) {
-        setInviteLinks(links);
-      }
-      setEmails([]);
-      setCurrentEmailInput('');
-      toast.success('Invite link sent!');
-    } catch (err) {
-      toast.error('Failed to send invites');
-    } finally {
-      setIsSendingInvite(false);
-    }
+    addCollaborator({ projectId: id, contributorEmails: allEmails });
   };
 
-  const deleteCollaborator = async (contributorId: string) => {
-    try {
-      const res = await fetch(`/api/contributor?projectId=${id}`, {
-        method: 'DELETE',
-        body: JSON.stringify({ contributorId: contributorId }),
-      });
-      if (!res.ok) throw new Error('Failed to delete collaborator');
-      toast.success('Collaborator removed successfully');
-      return true;
-    } catch (error) {
-      console.error('Error deleting collaborator:', error);
-      toast.error('Failed to remove collaborator');
-      return false;
-    }
-  };
+  // const deleteCollaborator = async (contributorId: string) => {
+  //   try {
+  //     const res = await fetch(`/api/contributor?projectId=${id}`, {
+  //       method: 'DELETE',
+  //       body: JSON.stringify({ contributorId: contributorId }),
+  //     });
+  //     if (!res.ok) throw new Error('Failed to delete collaborator');
+  //     toast.success('Collaborator removed successfully');
+  //     return true;
+  //   } catch (error) {
+  //     console.error('Error deleting collaborator:', error);
+  //     toast.error('Failed to remove collaborator');
+  //     return false;
+  //   }
+  // };
 
   if (isLoading)
     return (
@@ -122,7 +140,7 @@ function DashboardSettings({ id }: { id: string }) {
                   {emails.map((email, index) => (
                     <div
                       key={index}
-                      className="bg-gray-100 text-sm px-3 py-1 rounded-full flex items-center"
+                      className="bg-card text-sm px-3 py-1 rounded-full flex items-center"
                     >
                       {email}
                       <button
@@ -220,38 +238,61 @@ function DashboardSettings({ id }: { id: string }) {
                   Copy Invite Link
                 </Button>
               )}
-              <Button
-                variant="destructive"
-                size="sm"
-                className="flex items-center gap-1"
-                onClick={async () => {
-                  if (
-                    window.confirm(
-                      `Are you sure you want to remove ${member.email} from the project?`,
-                    )
-                  ) {
-                    const result = await deleteCollaborator(member.id);
-                    if (result) {
-                      toast.success('Collaborator removed');
-                    } else {
-                      toast.error('Failed to remove collaborator');
-                    }
-                  }
-                }}
-                title="Remove collaborator"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Delete
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="flex items-center gap-1"
+                    // onClick={async () => {
+                    //   if (
+                    //     window.confirm(
+                    //       `Are you sure you want to remove ${member.email} from the project?`,
+                    //     )
+                    //   ) {
+                    //     const result = await deleteCollaborator(member.id);
+                    //     if (result) {
+                    //       toast.success('Collaborator removed');
+                    //     } else {
+                    //       toast.error('Failed to remove collaborator');
+                    //     }
+                    //   }
+                    // }}
+                    title="Remove collaborator"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Delete
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogTitle>Remove Collaborator</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to remove {member.email} from this project?
+                  </DialogDescription>
+                  <DialogFooter>
+                    <Button variant="outline">Cancel</Button>
+                    <DialogClose>
+                      <Button
+                        variant="destructive"
+                        onClick={async () =>
+                          deleteCollaborator({ contributorId: member.id, projectId: id })
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         ))}
