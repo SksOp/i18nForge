@@ -104,27 +104,79 @@ function DashboardTranslation({ id }: { id: string }) {
     const changes: ChangedFile[] = [];
 
     try {
-      // Build updated files with edits
-      const updatedFlatFiles: Record<string, Record<string, string>> = {};
+      // Helper function to set nested object value
+      const setNestedValue = (obj: any, keyPath: string, value: string) => {
+        const keys = keyPath.split('.');
+        let current = obj;
 
-      fileNames.forEach((lang) => {
-        updatedFlatFiles[lang] = {};
-        dataForTable.forEach((entry) => {
-          const edited = editedValues.find((v) => v.key === entry.key && v.language === lang);
-          updatedFlatFiles[lang][entry.key] = edited?.newValue ?? entry[lang] ?? '';
-        });
+        // Navigate to the parent object
+        for (let i = 0; i < keys.length - 1; i++) {
+          const key = keys[i];
+          if (!(key in current) || typeof current[key] !== 'object' || current[key] === null) {
+            current[key] = {};
+          }
+          current = current[key];
+        }
+
+        // Set the final value
+        current[keys[keys.length - 1]] = value;
+      };
+
+      // Helper function to get nested object value
+      const getNestedValue = (obj: any, keyPath: string): string => {
+        const keys = keyPath.split('.');
+        let current = obj;
+
+        for (const key of keys) {
+          if (current && typeof current === 'object' && key in current) {
+            current = current[key];
+          } else {
+            return ''; // Return empty string if path doesn't exist
+          }
+        }
+
+        return typeof current === 'string' ? current : '';
+      };
+
+      // Group edited values by language
+      const editsByLanguage: Record<string, EditedValue[]> = {};
+      editedValues.forEach((edit) => {
+        if (!editsByLanguage[edit.language]) {
+          editsByLanguage[edit.language] = [];
+        }
+        editsByLanguage[edit.language].push(edit);
       });
 
-      // Compare with original and create changed files
-      fileNames.forEach((lang) => {
+      console.log('editsByLanguage:', editsByLanguage);
+      console.log('originalFileContents:', originalFileContents);
+
+      // Process each language that has edits
+      Object.keys(editsByLanguage).forEach((lang) => {
         try {
-          if (!originalFileContents[lang]) return;
+          const originalContent = originalFileContents[lang] || {};
+          const editsForLang = editsByLanguage[lang];
 
-          const newNested = unflattenTranslations(updatedFlatFiles[lang]);
-          const original = originalFileContents[lang];
+          console.log(`Processing ${lang}:`, { originalContent, editsForLang });
 
-          const oldContent = JSON.stringify(original, null, 2);
-          const newContent = JSON.stringify(newNested, null, 2);
+          // Create a deep copy of original content
+          const updatedContent = JSON.parse(JSON.stringify(originalContent));
+
+          // Apply only the edits for this language
+          editsForLang.forEach((edit) => {
+            console.log(`Applying edit for ${lang}:`, edit);
+
+            // Handle nested keys using dot notation
+            setNestedValue(updatedContent, edit.key, edit.newValue);
+          });
+
+          const oldContent = JSON.stringify(originalContent, null, 2);
+          const newContent = JSON.stringify(updatedContent, null, 2);
+
+          console.log(`${lang} comparison:`, {
+            oldContent: oldContent.substring(0, 100) + '...',
+            newContent: newContent.substring(0, 100) + '...',
+            areEqual: oldContent === newContent,
+          });
 
           if (oldContent !== newContent) {
             changes.push({
@@ -138,13 +190,24 @@ function DashboardTranslation({ id }: { id: string }) {
           console.error(`Error processing changes for ${lang}:`, error);
         }
       });
+
+      console.log('Final changes:', changes);
     } catch (error) {
       console.error('Error calculating changed files:', error);
       return [];
     }
 
     return changes;
-  }, [dataForTable, editedValues, fileNames, originalFileContents]);
+  }, [editedValues, fileNames, originalFileContents]);
+
+  useEffect(() => {
+    console.log('=== DEBUG INFO ===');
+    console.log('editedValues:', editedValues);
+    console.log('fileNames:', fileNames);
+    console.log('originalFileContents:', originalFileContents);
+    console.log('changedFiles:', changedFiles);
+    console.log('==================');
+  }, [dataForTable, editedValues, fileNames, originalFileContents, changedFiles]);
 
   const getChangedFilesWithOnlyLines = useMemo(() => {
     return changedFiles.map((f) => {
@@ -499,6 +562,9 @@ function DashboardTranslation({ id }: { id: string }) {
     }
   };
 
+  console.log('Changed files:', changedFiles);
+  console.log('Edited values:', editedValues);
+
   return (
     <div className=" h-full flex-1 flex-col space-y-8 p-8 flex">
       <div className="flex items-center justify-between space-y-2">
@@ -615,8 +681,11 @@ function DashboardTranslation({ id }: { id: string }) {
 
       <TranslationDataTable
         data={dataForTable}
+        setData={setDataForTable}
         columns={columns}
+        setEditedValues={setEditedValues}
         editedValuesCount={editedValues.length}
+        fileNames={fileNames}
       />
     </div>
   );

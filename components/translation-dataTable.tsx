@@ -23,16 +23,29 @@ import { DataTablePagination } from './translationTable-pagination';
 import { DataTableToolbar } from './translationtable-toolbar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 
+interface EditedValue {
+  key: string;
+  language: string;
+  newValue: string;
+  originalValue: string;
+}
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  setData: React.Dispatch<React.SetStateAction<TData[]>>;
+  setEditedValues?: React.Dispatch<React.SetStateAction<EditedValue[]>>;
   editedValuesCount?: number;
+  fileNames: string[];
 }
 
 function TranslationDataTable<TData, TValue>({
   columns,
   data,
+  setData,
   editedValuesCount = 0,
+  setEditedValues,
+  fileNames,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -66,7 +79,14 @@ function TranslationDataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar data={data} table={table} />
+      <DataTableToolbar
+        data={data}
+        setData={setData}
+        table={table}
+        columns={columns}
+        setEditedValues={setEditedValues}
+        fileNames={fileNames}
+      />
       <div className="rounded-md border overflow-hidden">
         <Table className="table-auto w-full">
           <TableHeader className="bg-muted">
