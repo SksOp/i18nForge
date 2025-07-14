@@ -78,15 +78,13 @@ export class ColabService {
 
     for (const contributor of results) {
       try {
-        console.log('Sending email to', contributor.email);
-        await this.emailService.sendEmail(
-          contributor.email,
-          `You've been invited to collaborate on ${project.name}`,
-          emailTemplate(project.name, contributor.colabLink, senderName),
-        );
+        await this.emailService.sendEmail({
+          to: contributor.email,
+          subject: `You've been invited to collaborate on ${project.name}`,
+          html: emailTemplate(project.name, contributor.colabLink, senderName),
+        });
         successEmails[contributor.email] = 'Invite sent';
       } catch (error) {
-        console.error(`Error sending email to ${contributor.email}:`, error);
         failedEmails[contributor.email] = 'Error sending email';
       }
     }
@@ -155,6 +153,25 @@ export class ColabService {
     return {
       success: true,
       contributors,
+    };
+  }
+
+  public async removeCollaborator(collaboratorId: string) {
+    const contributor = await rawPrisma.contributorToProject.findUnique({
+      where: { id: collaboratorId },
+    });
+
+    if (!contributor) {
+      throw new Error('Contributor not found');
+    }
+
+    await rawPrisma.contributorToProject.delete({
+      where: { id: collaboratorId },
+    });
+
+    return {
+      success: true,
+      message: 'Collaborator removed successfully',
     };
   }
 }

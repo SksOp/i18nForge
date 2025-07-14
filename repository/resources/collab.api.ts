@@ -17,3 +17,39 @@ export const fetchContributions = async (projectId: string) => {
     throw error;
   }
 };
+
+export const addContributor = async ({
+  projectId,
+  contributorEmails,
+}: {
+  projectId: string;
+  contributorEmails: string[];
+}) => {
+  const res = await fetch(`/api/contributor/invite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectId, emails: contributorEmails }),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to send invites');
+  }
+
+  return res.json();
+};
+
+export const deleteContributor = async (projectId: string, contributorId: string) => {
+  try {
+    const res = await fetch(`/api/contributor?projectId=${projectId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ contributorId: contributorId }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to delete contributor');
+    }
+    return await res.json();
+  } catch (error) {
+    console.error('Error deleting contributor:', error);
+    throw error;
+  }
+};

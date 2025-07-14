@@ -91,7 +91,9 @@ export class MetaUtils {
     branch: string,
     fileContent: FileContentForCommit[],
     message: string,
+    user: { user: string; email: string },
   ) {
+    console.log('User commiting content:', user);
     try {
       const oid = await this.getOID(token, owner, repo, branch);
       if (!oid) throw new Error('Failed to get OID for the branch');
@@ -112,7 +114,7 @@ export class MetaUtils {
                             branchName: "${branch}"
                         },
                         message: {
-                            headline: "${message}"
+                            headline: "${`${user.user} <${user.email}>: ${message}`} "
                         },
                         fileChanges: {
                             additions: [${additions}]

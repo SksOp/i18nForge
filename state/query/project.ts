@@ -2,6 +2,12 @@ import { JsonValue } from '@prisma/client/runtime/library';
 import { queryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+interface ProjectResponse {
+  projects: Project[];
+  currentUser: {
+    userName: string;
+  };
+}
 interface Project {
   id: string;
   name: string;
@@ -14,6 +20,7 @@ interface Project {
   repoName: string;
   paths: Array<{ path: string; language: string }>;
   userId: string;
+  branch?: string;
 }
 interface CreateProjectPayload {
   name: string;
@@ -75,7 +82,7 @@ export const projectsQuery = () => {
           'Content-Type': 'application/json',
         },
       });
-      return response.json() as Promise<Project[]>;
+      return response.json() as Promise<ProjectResponse>;
     },
   });
 };
@@ -90,8 +97,45 @@ export const projectQuery = (projectId: string) => {
           'Content-Type': 'application/json',
         },
       });
-      return response.json() as Promise<Project>;
+      return response.json() as Promise<{
+        project: Project;
+        currentUser: {
+          userName: string;
+        };
+      }>;
     },
+  });
+};
+
+export const isOwnerQuery = (projectId: string) => {
+  if (!projectId) {
+    return queryOptions({
+      queryKey: ['isOwner', projectId],
+      queryFn: async () => {
+        throw new Error('Project ID is required');
+      },
+      enabled: false,
+    });
+  }
+  return queryOptions({
+    queryKey: ['isOwner', projectId],
+    queryFn: async () => {
+      const response = await fetch(`/api/project/isOwner/${projectId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to check ownership');
+      }
+      return response.json() as Promise<{ isOwner: boolean; error?: string }>;
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 

@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
-import { GetGitHubAccessTokenViaApp } from '@/app/api/global.utils';
+import { GetGitHubAccessTokenViaApp, haveAccessToProject } from '@/app/api/global.utils';
 
 import prisma from '@/lib/prisma';
 
@@ -14,13 +14,10 @@ export async function GET(request: NextRequest) {
   if (!session?.accessToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const accessToken = session.accessToken;
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Missing access token' }, { status: 400 });
-  }
   if (!request.nextUrl.searchParams.get('id')) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
   }
+
   const branch = request.nextUrl.searchParams.get('branch') ?? 'main';
 
   const project = await prisma.project.findUnique({
@@ -28,10 +25,18 @@ export async function GET(request: NextRequest) {
       id: request.nextUrl.searchParams.get('id') ?? undefined,
     },
   });
+  const isAccessable = await haveAccessToProject(project?.id ?? '', session.user.email);
+  if (!isAccessable) {
+    return NextResponse.json({ error: 'You do not have access to this project' }, { status: 403 });
+  }
+
   if (!project) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
-
+  const accessToken = await GetGitHubAccessTokenViaApp(project.installationId);
+  if (!accessToken) {
+    return NextResponse.json({ error: 'Failed to get access token' }, { status: 500 });
+  }
   const { paths, owner, name } = project;
   if (!paths) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -55,6 +60,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.accessToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const token = request.headers.get('x-user-accessToken');
@@ -63,6 +73,10 @@ export async function POST(request: NextRequest) {
     const branch = searchParams.get('branch');
     const path = searchParams.get('path');
     const message = searchParams.get('message');
+    const user = {
+      user: session.name,
+      email: session.email,
+    };
 
     if (!token || !owner || !repo || !branch || !path || !message) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -80,7 +94,15 @@ export async function POST(request: NextRequest) {
       branch: branch,
     }));
 
-    const result = await MetaAPI.commitContent(token, owner, repo, branch, fileContent, message);
+    const result = await MetaAPI.commitContent(
+      token,
+      owner,
+      repo,
+      branch,
+      fileContent,
+      message,
+      user,
+    );
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error committing content:', error);

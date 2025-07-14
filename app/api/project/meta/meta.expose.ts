@@ -17,8 +17,9 @@ export const MetaAPI = {
     branch: string,
     fileContent: FileContentForCommit[],
     message: string,
+    user: { user: string; email: string },
   ) => {
-    return MetaUtils.commitContent(token, owner, repo, branch, fileContent, message);
+    return MetaUtils.commitContent(token, owner, repo, branch, fileContent, message, user);
   },
   createPullRequest: (
     token: string,

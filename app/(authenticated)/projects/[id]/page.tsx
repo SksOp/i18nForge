@@ -1,11 +1,12 @@
 'use client';
 
+import { SessionProvider } from 'next-auth/react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import React from 'react';
 
 import Layout from '@/layout/layout';
-import { dashboardQuery, projectQuery } from '@/state/query/project';
+import { dashboardQuery, isOwnerQuery, projectQuery } from '@/state/query/project';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Home } from 'lucide-react';
 
@@ -23,9 +24,29 @@ function DashboardPage() {
     dashboardQuery(params.id as string),
   );
 
-  console.log('dashboard', dashboard);
+  const { data: isAccessible, isLoading: isAccessibleLoading } = useQuery({
+    queryKey: ['isAccessible', params.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/project/isAccessable/${params.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch project accessibility status');
+      }
+      const data = await response.json();
+      return data.isAccessible;
+    },
+    enabled: !!params.id,
+  });
 
-  if (isLoading || dashboardLoading) {
+  const { data: Ownership, isLoading: isOwnerLoading } = useQuery(
+    isOwnerQuery(params.id as string),
+  );
+
+  if (isLoading || dashboardLoading || isOwnerLoading || isAccessibleLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner />
@@ -46,7 +67,7 @@ function DashboardPage() {
     </div>
   );
 
-  return (
+  return isAccessible ? (
     <Layout>
       <div className="mt-2 px-10">
         <div className="flex items-center justify-start gap-1 mb-4">
@@ -54,27 +75,41 @@ function DashboardPage() {
             <Home className="w-4 h-4" />
           </Link>
           <ChevronRight className="w-4 h-4" />
-          <h4 className="text-sm font-bold ">{project.name}</h4>
+          <h4 className="text-sm font-bold ">{project.project.name}</h4>
         </div>
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className=" flex gap-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="translations">Translations</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            {Ownership.isOwner && <TabsTrigger value="settings">Settings</TabsTrigger>}
           </TabsList>
           <TabsContent value="overview">
             <DashboardMain data={dashboard} />
           </TabsContent>
           <TabsContent value="translations">
-            <DashboardTranslation id={project.id} />{' '}
+            <DashboardTranslation id={project.project.id} />{' '}
           </TabsContent>
-          <TabsContent value="settings">
-            <div className="mt-3">
-              <DashboardSettings id={project.id} />
-              <DeleteProject id={project.id} />
-            </div>
-          </TabsContent>
+          {Ownership.isOwner && (
+            <TabsContent value="settings">
+              <div className="mt-3">
+                <DashboardSettings id={project.project.id} />
+                <DeleteProject id={project.project.id} />
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
+      </div>
+    </Layout>
+  ) : (
+    <Layout>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-6">You do not have permission to view this project.</p>
+          <Link href="/home" className="text-blue-500 hover:underline">
+            Go back to Home
+          </Link>
+        </div>
       </div>
     </Layout>
   );

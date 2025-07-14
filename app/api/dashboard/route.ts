@@ -6,6 +6,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/auth';
 
 import prisma from '@/lib/prisma';
 
+import { GetGitHubAccessTokenViaApp } from '../global.utils';
 import { totalColab } from './totalColab/route';
 import { TotalLanguage } from './totalLanguage/route';
 import { GetComitsHistory } from './utils.dashboard';
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       repo
         ? (async () => {
             const commits = await GetComitsHistory(
-              session.accessToken,
+              await GetGitHubAccessTokenViaApp(project.installationId),
               project?.name,
               BotName + '[bot]',
               per_page,

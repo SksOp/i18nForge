@@ -62,7 +62,7 @@ model Project {
   user                  User                    @relation(fields: [userId], references: [id])
   SharedProjectRelation SharedProjectRelation[]
   ContributorToProject  ContributorToProject[]
-  Installation          Installation?           @relation("ProjectToInstallation", fields: [installationId], references: [installationId])
+  Installation          Installation           @relation("ProjectToInstallation", fields: [installationId], references: [installationId])
 
   @@map("projects")
 }

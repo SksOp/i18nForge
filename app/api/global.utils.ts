@@ -177,3 +177,83 @@ export async function GetGitHubAccessTokenViaApp(installationId: string): Promis
     );
   }
 }
+
+export async function GetGithubAccessTokenViaProjectId(params: { installationId: string }) {
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: params.installationId },
+    });
+    if (!project) {
+      throw new Error('Project not found');
+    }
+    return await GetGitHubAccessTokenViaApp(project.installationId);
+  } catch (error) {
+    throw new Error(
+      `Failed to get GitHub access token via project ID: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
+}
+
+export async function haveOwnerAccessToProject(
+  projectId: string,
+  userEmail: string,
+): Promise<boolean> {
+  if (!projectId || !userEmail) {
+    throw new Error('Project ID and user email are required');
+  }
+  try {
+    const [projectResult, userResult] = await Promise.allSettled([
+      prisma.project.findUnique({
+        where: { id: projectId },
+      }),
+      prisma.user.findFirst({
+        where: { email: userEmail },
+      }),
+    ]);
+
+    if (projectResult.status === 'fulfilled' && projectResult.value) {
+      const userObj = userResult.status === 'fulfilled' ? userResult.value : null;
+      return userObj ? projectResult.value.userId === userObj.id : false;
+    }
+    return false;
+  } catch (error) {
+    throw new Error(
+      `Failed to check access to project: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
+}
+
+export async function haveAccessToProject(projectId: string, userEmail: string): Promise<boolean> {
+  if (!projectId || !userEmail) {
+    throw new Error('Project ID and user email are required');
+  }
+  try {
+    const [projectResult, userResult, contributorResult] = await Promise.allSettled([
+      prisma.project.findUnique({
+        where: { id: projectId },
+      }),
+      prisma.user.findFirst({
+        //
+        where: { email: userEmail },
+      }),
+      prisma.contributorToProject.findFirst({
+        where: {
+          projectId: projectId,
+          email: userEmail,
+        },
+      }),
+    ]);
+
+    if (projectResult.status === 'fulfilled' && projectResult.value) {
+      const userObj = userResult.status === 'fulfilled' ? userResult.value : null;
+      const contributorObj =
+        contributorResult.status === 'fulfilled' ? contributorResult.value : null;
+      return userObj ? projectResult.value.userId === userObj.id || contributorObj !== null : false;
+    }
+    return false;
+  } catch (error) {
+    throw new Error(
+      `Failed to check access to project: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
+}
