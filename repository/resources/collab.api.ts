@@ -38,9 +38,9 @@ export const addContributor = async ({
   return res.json();
 };
 
-export const deleteContributor = async (projctId: string, contributorId: string) => {
+export const deleteContributor = async (projectId: string, contributorId: string) => {
   try {
-    const res = await fetch(`/api/contributor?projectId=${projctId}`, {
+    const res = await fetch(`/api/contributor?projectId=${projectId}`, {
       method: 'DELETE',
       body: JSON.stringify({ contributorId: contributorId }),
     });
