@@ -36,7 +36,7 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-    } catch {}
+    } catch { }
 
     const user = await prisma.user.findUnique({
       where: {
@@ -78,6 +78,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
   }
 }
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -92,12 +93,41 @@ export async function GET() {
         email: user?.email,
       },
     });
+    const validUserId = user?.id ?? null;
+    const contributorProjectIds = contributors
+      .map((c) => c.projectId)
+      .filter((id) => id !== undefined && id !== null);
+
+    const orConditions = [];
+    if (validUserId) {
+      orConditions.push({ userId: validUserId });
+    }
+    if (contributorProjectIds.length > 0) {
+      orConditions.push({ id: { in: contributorProjectIds } });
+    }
+
+    // Build the where clause properly
+    let whereClause: { [key: string]: any } = {};
+
+    if (orConditions.length > 0) {
+      whereClause.OR = orConditions;
+    }
+
+    // Only add the userId filter if the user is not already included in OR conditions
+    // and we want to ensure we don't get null userIds
+    if (!validUserId && orConditions.length === 0) {
+      // If no valid conditions, return empty array
+      return NextResponse.json({
+        projects: [],
+        currentUser: {
+          username: user?.username,
+        },
+      });
+    }
+
     const projects = await prisma.project.findMany({
-      where: {
-        OR: [{ userId: user?.id }, { id: { in: contributors.map((c) => c.projectId) } }],
-      },
+      where: whereClause,
     });
-    /*** also get project that i dont know from contributors from githubs***/
 
     return NextResponse.json({
       projects,
