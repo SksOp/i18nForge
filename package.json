@@ -24,7 +24,6 @@
     "@hookform/resolvers": "^5.0.1",
     "@langchain/core": "^0.3.42",
     "@langchain/google-genai": "^0.1.11",
-    "@next/swc-darwin-arm64": "^15.4.3",
     "@octokit/auth-app": "^7.2.1",
     "@octokit/rest": "^21.1.1",
     "@prisma/client": "^6.11.1",
@@ -95,6 +94,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@next/swc-darwin-arm64": "^15.4.3",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
