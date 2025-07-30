@@ -48,17 +48,23 @@ function TranslationDataTable<TData, TValue>({
   fileNames,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  // const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
+    return {
+      key: true,
+      ...Object.fromEntries(fileNames.map((lang) => [lang, true])),
+    };
+  });
 
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
-      columnVisibility,
+      columnVisibility: { status: false },
       rowSelection,
       columnFilters,
       globalFilter,
@@ -86,6 +92,8 @@ function TranslationDataTable<TData, TValue>({
         columns={columns}
         setEditedValues={setEditedValues}
         fileNames={fileNames}
+        columnVisibility={columnVisibility}
+        setColumnVisibility={setColumnVisibility}
       />
       <div className="rounded-md border overflow-hidden">
         <Table className="table-auto w-full">

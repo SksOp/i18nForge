@@ -200,15 +200,6 @@ function DashboardTranslation({ id }: { id: string }) {
     return changes;
   }, [editedValues, fileNames, originalFileContents]);
 
-  useEffect(() => {
-    console.log('=== DEBUG INFO ===');
-    console.log('editedValues:', editedValues);
-    console.log('fileNames:', fileNames);
-    console.log('originalFileContents:', originalFileContents);
-    console.log('changedFiles:', changedFiles);
-    console.log('==================');
-  }, [dataForTable, editedValues, fileNames, originalFileContents, changedFiles]);
-
   const getChangedFilesWithOnlyLines = useMemo(() => {
     return changedFiles.map((f) => {
       const diffs = getFileDiff(f.oldContent, f.newContent);

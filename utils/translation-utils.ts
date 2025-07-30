@@ -87,3 +87,7 @@ export function recreateTranslationFiles(tableData: TranslationEntry[]): Transla
 
   return result;
 }
+
+export function getMissingLanguages(entry: TranslationEntry, fileNames: string[]): string[] {
+  return fileNames.filter((lang) => !entry[lang] || entry[lang].trim() === '');
+}
