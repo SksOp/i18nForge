@@ -1,13 +1,14 @@
 import * as React from 'react';
 
 import { Column } from '@tanstack/react-table';
-import { Check, Command, PlusCircle } from 'lucide-react';
+import { Check, PlusCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import {
+  Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
@@ -34,8 +35,9 @@ export function DataTableFacetedFilter<TData, TValue>({
   options,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues();
-  const selectedValues = new Set(column?.getFilterValue() as string[]);
-
+  const selectedValues = new Set((column?.getFilterValue() as string[]) ?? []);
+  console.log('Faceted Filter:', facets, selectedValues);
+  console.log('Column:', column, options);
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -71,9 +73,9 @@ export function DataTableFacetedFilter<TData, TValue>({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent className="w-[300px] p-0" align="start">
         <Command>
-          <CommandInput placeholder={title} />
+          {/* <CommandInput placeholder={title} /> */}
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
@@ -118,6 +120,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem
+                    disabled={selectedValues.size === 0}
                     onSelect={() => column?.setFilterValue(undefined)}
                     className="justify-center text-center"
                   >

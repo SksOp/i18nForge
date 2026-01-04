@@ -1,15 +1,18 @@
 'use client';
 
 import { TranslationEntry } from '@/types/translations';
-import { ColumnDef, Row } from '@tanstack/react-table';
+import { ColumnDef, ColumnVisibility, Row } from '@tanstack/react-table';
 import { Loader2, Wand2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+import { getMissingLanguages } from '@/utils/translation-utils';
+
 import { cn } from '@/lib/utils';
 
 import { TranslationCellEditor } from './translation-cellEdit';
+import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
 
 interface BuildTranslationColumnsParams {
@@ -90,5 +93,30 @@ export function buildTranslationColumns({
         );
       },
     })),
+    {
+      id: 'status',
+      header: 'Status',
+      accessorKey: 'status',
+      accessorFn: (row) => {
+        // Get all languages (exclude the 'key' field)
+        const langs = Object.keys(row).filter((key) => key !== 'key');
+
+        const hasMissing = langs.some((lang) => {
+          const val = row?.[lang];
+          return typeof val !== 'string' || val.trim() === '';
+        });
+
+        return hasMissing ? 'missing' : 'complete';
+      },
+      cell: ({ getValue }) => {
+        const status = getValue() as string;
+        return (
+          <Badge variant={status === 'missing' ? 'destructive' : 'outline'} className="capitalize">
+            {status}
+          </Badge>
+        );
+      },
+      enableColumnFilter: true,
+    },
   ];
 }
